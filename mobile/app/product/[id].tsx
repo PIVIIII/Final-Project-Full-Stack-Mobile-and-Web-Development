@@ -1,53 +1,44 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 
-const products = [
-  {
-    id: '1',
-    name: 'Cat Feather Toy',
-    price: 120,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-    description: 'ของเล่นขนนกสำหรับแมว เพิ่มความสนุกในการล่า',
-  },
-  {
-    id: '2',
-    name: 'Cat Ball Toy',
-    price: 80,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-    description: 'ลูกบอลของเล่นให้แมววิ่งไล่',
-  },
-  {
-    id: '3',
-    name: 'Cat Tunnel',
-    price: 350,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-    description: 'อุโมงค์สำหรับแมวซ่อนและเล่น',
-  },
-  {
-    id: '4',
-    name: 'Cat Scratcher',
-    price: 220,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-    description: 'ที่ลับเล็บสำหรับแมว',
-  },
-];
+type Product = {
+  _id?: string;
+  id?: string;
+  name: string;
+  description?: string;
+  price?: number;
+};
 
 export default function ProductDetail() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams(); // ดึง id จาก route
+  const [product, setProduct] = useState<Product | null>(null);
 
-  const product = products.find((p) => p.id === id);
+  const API_URL = `http://localhost:5000/api/products/${id}`;
 
-  if (!product) return <Text>Product not found</Text>;
+  useEffect(() => {
+    if (!id) return;
+
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => setProduct(data));
+  }, [id]);
+
+  if (!product) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: product.image }} style={styles.image} />
-
       <Text style={styles.name}>{product.name}</Text>
 
-      <Text style={styles.price}>{product.price} บาท</Text>
+      <Text style={styles.description}>{product.description}</Text>
 
-      <Text style={styles.desc}>{product.description}</Text>
+      {product.price && <Text style={styles.price}>{product.price} บาท</Text>}
     </View>
   );
 }
@@ -55,31 +46,25 @@ export default function ProductDetail() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    padding: 30,
-    backgroundColor: 'white',
-  },
-
-  image: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#fff',
   },
 
   name: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 15,
+  },
+
+  description: {
+    fontSize: 16,
+    marginBottom: 20,
+    lineHeight: 22,
   },
 
   price: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#ff8c42',
-    marginVertical: 10,
-  },
-
-  desc: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#555',
   },
 });

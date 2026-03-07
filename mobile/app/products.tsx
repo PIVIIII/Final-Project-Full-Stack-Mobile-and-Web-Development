@@ -7,57 +7,59 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 
-const products = [
-  {
-    id: '1',
-    name: 'Cat Feather Toy',
-    price: 120,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-  },
-  {
-    id: '2',
-    name: 'Cat Ball Toy',
-    price: 80,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-  },
-  {
-    id: '3',
-    name: 'Cat Tunnel',
-    price: 350,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-  },
-  {
-    id: '4',
-    name: 'Cat Scratcher',
-    price: 220,
-    image: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-  },
-];
+type Product = {
+  _id?: string;
+  id?: string;
+  name: string;
+  price: number;
+  tags?: string[];
+};
 
 export default function ProductsScreen() {
+  // ดึงข้อมูลจาก server
+  const API_URL = 'http://localhost:5000/api/products';
   const [search, setSearch] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  useEffect(() => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => setProducts(data));
+  }, []);
 
-  const renderItem = ({ item }: any) => (
+  // search ทั้ง name และ nametag
+  const filteredProducts = products.filter((p: Product) => {
+    const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase());
+    const tagMatch = Array.isArray(p.tags)
+      ? p.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()))
+      : false;
+    return nameMatch || tagMatch;
+  });
+
+  const renderItem = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
         router.push({
           pathname: '/product/[id]',
-          params: { id: item.id },
+          params: { id: item._id || item.id },
         })
       }
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
-
       <Text style={styles.name}>{item.name}</Text>
-
+      {/* nametag */}
+      {Array.isArray(item.tags) && item.tags.length > 0 && (
+        <View style={styles.tagsContainer}>
+          {item.tags.map((tag: string) => (
+            <Text key={tag} style={styles.tag}>
+              {tag}
+            </Text>
+          ))}
+        </View>
+      )}
       <Text style={styles.price}>{item.price} บาท</Text>
     </TouchableOpacity>
   );
@@ -76,7 +78,7 @@ export default function ProductsScreen() {
 
       <FlatList
         data={filteredProducts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item._id || item.id || index.toString()}
         renderItem={renderItem}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
@@ -86,6 +88,20 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
+  tagsContainer: {
+    flexDirection: 'row',
+    marginVertical: 5,
+    gap: 5,
+  },
+  tag: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    fontSize: 12,
+    color: '#333',
+    marginRight: 5,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f2f2f2',
