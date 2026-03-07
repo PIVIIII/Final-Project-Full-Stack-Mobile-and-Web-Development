@@ -26,33 +26,37 @@ export default function ProductDetail() {
 
     fetch(API_URL)
       .then((res) => res.json())
-      .then((data) => setProduct(data));
+      .then((data) => setProduct(data))
+      .catch((err) => console.log(err));
   }, [id]);
 
   const increase = () => {
     if (!product) return;
 
     if (qty < product.stock) {
-      setQty(qty + 1);
+      setQty((prev) => prev + 1);
     }
   };
 
   const decrease = () => {
     if (qty > 1) {
-      setQty(qty - 1);
+      setQty((prev) => prev - 1);
     }
   };
 
   const handleAdd = () => {
     if (!product) return;
 
-    addToCart({
-      id: product._id,
-      name: product.name,
-      price: product.price,
+    addToCart(
+      {
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        qty: 0,
+      },
       qty,
-      stock: product.stock,
-    });
+    );
 
     setToast(true);
 
@@ -73,7 +77,9 @@ export default function ProductDetail() {
     <View style={styles.container}>
       <Text style={styles.name}>{product.name}</Text>
 
-      <Text style={styles.description}>{product.description}</Text>
+      {product.description && (
+        <Text style={styles.description}>{product.description}</Text>
+      )}
 
       <Text style={styles.price}>{product.price} บาท</Text>
 
@@ -96,7 +102,7 @@ export default function ProductDetail() {
       </View>
 
       <TouchableOpacity style={styles.orderBtn} onPress={handleAdd}>
-        <Text style={styles.orderText}>สั่งสินค้า</Text>
+        <Text style={styles.orderText}>เพิ่มลงตะกร้า</Text>
       </TouchableOpacity>
 
       {toast && (
@@ -118,18 +124,20 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 10,
   },
 
   description: {
     fontSize: 16,
     marginBottom: 20,
+    color: '#444',
   },
 
   price: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#ff8c42',
+    marginBottom: 5,
   },
 
   stock: {

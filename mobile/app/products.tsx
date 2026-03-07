@@ -5,23 +5,19 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Image,
   SafeAreaView,
 } from 'react-native';
-import { Link, Stack, router, useLocalSearchParams } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 
 type Product = {
-  _id?: string;
-  id?: string;
+  _id: string;
   name: string;
   price: number;
   tags?: string[];
 };
 
 export default function ProductsScreen() {
-  const { email } = useLocalSearchParams();
-
   const API_URL = 'http://localhost:5000/api/products';
 
   const [search, setSearch] = useState('');
@@ -33,7 +29,8 @@ export default function ProductsScreen() {
   useEffect(() => {
     fetch(API_URL)
       .then((res) => res.json())
-      .then((data) => setProducts(data));
+      .then((data) => setProducts(data))
+      .catch((err) => console.log(err));
   }, []);
 
   const toggleTag = (tag: string) => {
@@ -42,8 +39,8 @@ export default function ProductsScreen() {
     );
   };
 
-  const filteredProducts = products.filter((p: Product) => {
-    const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase());
+  const filteredProducts = products.filter((p) => {
+    const nameMatch = p.name.toLowerCase().includes(search.toLowerCase());
 
     const tagMatch =
       selectedTags.length === 0 ||
@@ -59,15 +56,15 @@ export default function ProductsScreen() {
       onPress={() =>
         router.push({
           pathname: '/product/[id]',
-          params: { id: item._id || item.id },
+          params: { id: item._id },
         })
       }
     >
       <Text style={styles.name}>{item.name}</Text>
 
-      {Array.isArray(item.tags) && item.tags.length > 0 && (
+      {item.tags && item.tags.length > 0 && (
         <View style={styles.tagsContainer}>
-          {item.tags.map((tag: string) => (
+          {item.tags.map((tag) => (
             <Text key={tag} style={styles.tag}>
               {tag}
             </Text>
@@ -82,7 +79,7 @@ export default function ProductsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* CONTENT */}
+
       <View style={styles.container}>
         <Text style={styles.title}>🐱 สินค้าสำหรับแมว</Text>
 
@@ -118,9 +115,7 @@ export default function ProductsScreen() {
 
         <FlatList
           data={filteredProducts}
-          keyExtractor={(item, index) =>
-            item._id || item.id || index.toString()
-          }
+          keyExtractor={(item) => item._id}
           renderItem={renderItem}
           numColumns={2}
           columnWrapperStyle={{ justifyContent: 'space-between' }}
@@ -140,49 +135,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f2f2f2',
     padding: 20,
-  },
-
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#222',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-  },
-
-  headerTitle: {
-    color: '#ff8c42',
-    fontWeight: 'bold',
-    fontSize: 22,
-  },
-
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
-  cartIcon: {
-    width: 28,
-    height: 28,
-  },
-
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-
-  headerAuth: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-
-  headerUser: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 
   title: {
@@ -244,6 +196,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginVertical: 5,
     gap: 5,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
 
   tag: {
