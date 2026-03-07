@@ -5,20 +5,52 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  Animated,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useCart } from '../context/CartContext';
+import { useCartStore } from '../store/useCartStore';
+import { useState } from 'react';
 
 export default function CartScreen() {
-  const { cart, increase, decrease, remove, clearCart } = useCart();
+  const cart = useCartStore((state) => state.cart);
+  const increase = useCartStore((state) => state.increase);
+  const decrease = useCartStore((state) => state.decrease);
+  const remove = useCartStore((state) => state.remove);
+  const clearCart = useCartStore((state) => state.clearCart);
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0];
 
+  const toggleDrawer = () => {
+    if (drawerOpen) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 260,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    }
+
+    setDrawerOpen(!drawerOpen);
+  };
+  // Calculation
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const vatRate = 0.07;
+  const vat = Math.round(subtotal * vatRate);
+  const shipping = subtotal > 0 ? 100 : 0;
+  const total = subtotal + vat + shipping;
+
+  // Checkout
   const handleCheckout = async () => {
     try {
       for (const item of cart) {
         await fetch(`http://localhost:5000/api/products/${item.id}`, {
-          method: 'PUT', // หรือ PUT แล้วแต่ backend
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -29,7 +61,6 @@ export default function CartScreen() {
       }
 
       clearCart();
-
       router.push('/payment-success');
     } catch (err) {
       console.log(err);
@@ -46,15 +77,14 @@ export default function CartScreen() {
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
 
-        <Text style={styles.price}>{item.price} บาท</Text>
+        <Text style={styles.price}>฿{item.price}</Text>
 
         <Text style={styles.stock}>เหลือ {item.stock} ชิ้น</Text>
 
         <View style={styles.qtyRow}>
           <TouchableOpacity
-            style={styles.qtyBtn}
+            style={[styles.qtyBtn, item.qty === 1 && styles.disabled]}
             onPress={() => decrease(item.id)}
-            disabled={item.qty === 1}
           >
             <Text style={styles.qtyText}>-</Text>
           </TouchableOpacity>
@@ -64,7 +94,6 @@ export default function CartScreen() {
           <TouchableOpacity
             style={[styles.qtyBtn, item.qty >= item.stock && styles.disabled]}
             onPress={() => increase(item.id)}
-            disabled={item.qty >= item.stock}
           >
             <Text style={styles.qtyText}>+</Text>
           </TouchableOpacity>
@@ -83,7 +112,6 @@ export default function CartScreen() {
 
       {cart.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Text style={styles.emptyIcon}>🛍️</Text>
           <Text style={styles.emptyText}>ยังไม่มีสินค้าในตะกร้า</Text>
         </View>
       ) : (
@@ -92,18 +120,50 @@ export default function CartScreen() {
             data={cart}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 120 }}
+            contentContainerStyle={{ paddingBottom: 200 }}
           />
 
-          <View style={styles.totalBox}>
-            <View>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.total}>{total} บาท</Text>
-            </View>
+          {/* Summary */}
+          <View style={styles.summaryBox}>
+            <TouchableOpacity
+              style={styles.summaryHeader}
+              onPress={toggleDrawer}
+            >
+              <Text style={styles.summaryTitle}>Summary</Text>
 
-            <TouchableOpacity style={styles.payBtn} onPress={handleCheckout}>
-              <Text style={styles.payText}>ชำระเงิน</Text>
+              <Text style={styles.arrow}>{drawerOpen ? 'v' : '^'}</Text>
             </TouchableOpacity>
+
+            <Animated.View
+              style={[
+                styles.summaryDetail,
+                {
+                  maxHeight: slideAnim,
+                  overflow: 'hidden',
+                },
+              ]}
+            >
+              {' '}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>฿{subtotal}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>VAT (7%)</Text>
+                <Text style={styles.summaryValue}>฿{vat}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Shipping</Text>
+                <Text style={styles.summaryValue}>฿{shipping}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Total</Text>
+                <Text style={styles.summaryTotal}>฿{total}</Text>
+              </View>
+              <TouchableOpacity style={styles.payBtn} onPress={handleCheckout}>
+                <Text style={styles.payText}>ชำระเงิน</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </>
       )}
@@ -115,11 +175,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f6f6f6',
-    padding: 16,
+    padding: 20,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 15,
   },
@@ -127,63 +187,59 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 12,
-    elevation: 2,
+    padding: 15,
+    borderRadius: 14,
+    marginBottom: 15,
   },
 
   image: {
     width: 80,
     height: 80,
     borderRadius: 10,
+    marginRight: 10,
   },
 
   info: {
     flex: 1,
-    marginLeft: 10,
   },
 
   name: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 
   price: {
     color: '#ff7a00',
     fontWeight: 'bold',
-    marginTop: 2,
   },
 
   stock: {
     color: 'gray',
-    fontSize: 12,
-    marginTop: 3,
+    marginBottom: 5,
   },
 
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
   },
 
   qtyBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
+    width: 35,
+    height: 35,
+    borderRadius: 8,
     backgroundColor: '#eee',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   qtyText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
 
   qty: {
     marginHorizontal: 10,
-    fontSize: 16,
+    fontSize: 18,
   },
 
   disabled: {
@@ -193,37 +249,62 @@ const styles = StyleSheet.create({
   remove: {
     color: 'red',
     marginTop: 5,
-    fontSize: 13,
   },
 
-  totalBox: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  summaryBox: {
     backgroundColor: 'white',
-    padding: 15,
-    borderTopWidth: 1,
-    borderColor: '#eee',
+    borderRadius: 20,
+    padding: 20,
+  },
+
+  summaryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
 
-  totalLabel: {
-    color: 'gray',
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 
-  total: {
-    fontSize: 20,
+  arrow: {
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#ff7a00',
+  },
+
+  summaryDetail: {
+    marginTop: 15,
+  },
+
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+
+  summaryLabel: {
+    color: 'gray',
+    fontSize: 16,
+  },
+
+  summaryValue: {
+    fontWeight: 'bold',
+  },
+
+  summaryTotal: {
+    fontWeight: 'bold',
+    fontSize: 20,
+    color: '#ff7a00',
   },
 
   payBtn: {
     backgroundColor: '#ff7a00',
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
   },
 
   payText: {
@@ -238,13 +319,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  emptyIcon: {
-    fontSize: 50,
-  },
-
   emptyText: {
-    marginTop: 10,
-    color: 'gray',
     fontSize: 18,
+    color: 'gray',
   },
 });

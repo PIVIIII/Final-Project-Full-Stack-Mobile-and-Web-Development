@@ -1,8 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useCart } from '../../context/CartContext';
-
+import { useCartStore } from '../../store/useCartStore';
 type Product = {
   _id: string;
   name: string;
@@ -13,7 +12,7 @@ type Product = {
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
-  const { addToCart } = useCart();
+  const addToCart = useCartStore((state) => state.addToCart);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [qty, setQty] = useState(1);
@@ -53,7 +52,6 @@ export default function ProductDetail() {
         name: product.name,
         price: product.price,
         stock: product.stock,
-        qty: 0,
       },
       qty,
     );

@@ -20,6 +20,7 @@ type Product = {
 export default function ProductsScreen() {
   const API_URL = 'http://localhost:5000/api/products';
 
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -37,6 +38,10 @@ export default function ProductsScreen() {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  };
+
+  const handleSearch = () => {
+    setSearch(searchInput);
   };
 
   const filteredProducts = products.filter((p) => {
@@ -83,12 +88,19 @@ export default function ProductsScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>🐱 สินค้าสำหรับแมว</Text>
 
-        <TextInput
-          placeholder="Search"
-          style={styles.search}
-          value={search}
-          onChangeText={setSearch}
-        />
+        {/* SEARCH */}
+        <View style={styles.searchRow}>
+          <TextInput
+            placeholder="Search"
+            style={styles.search}
+            value={searchInput}
+            onChangeText={setSearchInput}
+          />
+
+          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+            <Text style={styles.searchBtnText}>Search</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* TAG FILTER */}
         <View style={styles.tagFilter}>
@@ -113,13 +125,18 @@ export default function ProductsScreen() {
           ))}
         </View>
 
-        <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => item._id}
-          renderItem={renderItem}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between' }}
-        />
+        {/* PRODUCT LIST */}
+        {filteredProducts.length === 0 ? (
+          <Text style={styles.noResult}>No results found</Text>
+        ) : (
+          <FlatList
+            data={filteredProducts}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            numColumns={2}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -143,11 +160,29 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
+  searchRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+
   search: {
+    flex: 1,
     backgroundColor: 'white',
     padding: 12,
     borderRadius: 10,
-    marginBottom: 10,
+  },
+
+  searchBtn: {
+    backgroundColor: '#ff8c42',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+
+  searchBtnText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 
   tagFilter: {
@@ -214,5 +249,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ff8c42',
     fontWeight: 'bold',
+  },
+
+  noResult: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 18,
+    color: 'gray',
   },
 });
