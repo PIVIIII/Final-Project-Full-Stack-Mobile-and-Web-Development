@@ -5,12 +5,15 @@ import { CartProvider } from '@/context/CartContext';
 
 function Header() {
   const { user, logout } = useAuth();
+  console.log('user?.role', user?.role);
 
   return (
     <View style={styles.headerBar}>
       {/* LEFT */}
       <View style={styles.headerLeft}>
-        <Text style={styles.headerTitle}>MeowMarket</Text>
+        <Text style={styles.headerTitle}>
+          MeowMarket {user?.role === 'seller' ? '(seller)' : ''}
+        </Text>{' '}
       </View>
 
       {/* CENTER */}

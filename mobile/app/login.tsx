@@ -34,7 +34,9 @@ export default function Login() {
       if (!res.ok) {
         setError(data);
       } else {
-        login(email); // อัปเดต context
+        login(email, data.user.role);
+        console.log('data', data);
+
         router.back(); // กลับไปหน้าเดิม
       }
     } catch (err) {

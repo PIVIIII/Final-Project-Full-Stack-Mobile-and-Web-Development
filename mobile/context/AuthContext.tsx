@@ -2,11 +2,12 @@ import { createContext, useContext, useState } from 'react';
 
 type User = {
   email: string;
+  role?: string;
 };
 
 type AuthContextType = {
   user: User | null;
-  login: (email: string) => void;
+  login: (email: string, role?: string) => void;
   logout: () => void;
 };
 
@@ -19,8 +20,8 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: any) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (email: string) => {
-    setUser({ email });
+  const login = (email: string, role?: string) => {
+    setUser({ email, role });
   };
 
   const logout = () => {

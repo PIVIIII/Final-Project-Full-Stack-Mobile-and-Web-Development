@@ -42,7 +42,7 @@ export default function Signup() {
       if (!res.ok) {
         setError(data);
       } else {
-        login(email);
+        login(email, data.user.role);
         router.back();
       }
     } catch (err) {
