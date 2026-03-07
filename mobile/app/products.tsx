@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   TextInput,
 } from 'react-native';
@@ -19,10 +18,13 @@ type Product = {
 };
 
 export default function ProductsScreen() {
-  // ดึงข้อมูลจาก server
   const API_URL = 'http://localhost:5000/api/products';
+
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const allTags = ['food', 'toy', 'electronic'];
 
   useEffect(() => {
     fetch(API_URL)
@@ -30,13 +32,24 @@ export default function ProductsScreen() {
       .then((data) => setProducts(data));
   }, []);
 
-  // search ทั้ง name และ nametag
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  // Filter
   const filteredProducts = products.filter((p: Product) => {
+    // search เฉพาะชื่อสินค้า
     const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase());
-    const tagMatch = Array.isArray(p.tags)
-      ? p.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()))
-      : false;
-    return nameMatch || tagMatch;
+
+    // tag filter (OR logic)
+    const tagMatch =
+      selectedTags.length === 0 ||
+      (Array.isArray(p.tags) &&
+        p.tags.some((tag) => selectedTags.includes(tag)));
+
+    return nameMatch && tagMatch;
   });
 
   const renderItem = ({ item }: { item: Product }) => (
@@ -50,7 +63,7 @@ export default function ProductsScreen() {
       }
     >
       <Text style={styles.name}>{item.name}</Text>
-      {/* nametag */}
+
       {Array.isArray(item.tags) && item.tags.length > 0 && (
         <View style={styles.tagsContainer}>
           {item.tags.map((tag: string) => (
@@ -60,6 +73,7 @@ export default function ProductsScreen() {
           ))}
         </View>
       )}
+
       <Text style={styles.price}>{item.price} บาท</Text>
     </TouchableOpacity>
   );
@@ -70,11 +84,34 @@ export default function ProductsScreen() {
 
       {/* SEARCH */}
       <TextInput
-        placeholder="ค้นหาสินค้า..."
+        placeholder="Search"
         style={styles.search}
         value={search}
         onChangeText={setSearch}
       />
+
+      {/* TAG FILTER */}
+      <View style={styles.tagFilter}>
+        {allTags.map((tag) => (
+          <TouchableOpacity
+            key={tag}
+            style={[
+              styles.filterTag,
+              selectedTags.includes(tag) && styles.activeTag,
+            ]}
+            onPress={() => toggleTag(tag)}
+          >
+            <Text
+              style={[
+                styles.filterTagText,
+                selectedTags.includes(tag) && styles.activeTagText,
+              ]}
+            >
+              {tag}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <FlatList
         data={filteredProducts}
@@ -88,20 +125,6 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  tagsContainer: {
-    flexDirection: 'row',
-    marginVertical: 5,
-    gap: 5,
-  },
-  tag: {
-    backgroundColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    fontSize: 12,
-    color: '#333',
-    marginRight: 5,
-  },
   container: {
     flex: 1,
     backgroundColor: '#f2f2f2',
@@ -118,7 +141,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 12,
     borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  tagFilter: {
+    flexDirection: 'row',
     marginBottom: 20,
+    gap: 10,
+  },
+
+  filterTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#ddd',
+  },
+
+  activeTag: {
+    backgroundColor: '#ff8c42',
+  },
+
+  filterTagText: {
+    color: '#333',
+  },
+
+  activeTagText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 
   card: {
@@ -131,16 +180,25 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  image: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
-  },
-
   name: {
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+
+  tagsContainer: {
+    flexDirection: 'row',
+    marginVertical: 5,
+    gap: 5,
+  },
+
+  tag: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    fontSize: 12,
+    color: '#333',
   },
 
   price: {
