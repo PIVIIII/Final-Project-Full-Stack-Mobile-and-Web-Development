@@ -34,7 +34,6 @@ export default function Signup() {
       if (!res.ok) {
         setError(data);
       } else {
-        alert('Signup success!');
         login(email); // อัปเดต context
         router.back(); // กลับไปหน้าเดิม
       }

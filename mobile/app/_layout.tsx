@@ -1,24 +1,40 @@
 import { Stack, Link, router } from 'expo-router';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { CartProvider } from '@/context/CartContext';
 
 function Header() {
   const { user, logout } = useAuth();
 
   return (
     <View style={styles.headerBar}>
-      <Text style={styles.headerTitle}>MeowMarket</Text>
+      {/* LEFT */}
+      <View style={styles.headerLeft}>
+        <Text style={styles.headerTitle}>MeowMarket</Text>
+      </View>
 
+      {/* CENTER */}
+      <View style={styles.headerCenter}>
+        <Link href="/products" asChild>
+          <TouchableOpacity>
+            <Text style={styles.menuText}>PRODUCT</Text>
+          </TouchableOpacity>
+        </Link>
+
+        <Link href="/cart" asChild>
+          <TouchableOpacity>
+            <Text style={styles.menuText}>CART</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+
+      {/* RIGHT */}
       <View style={styles.headerRight}>
         {user ? (
           <>
             <Text style={styles.headerAuth}>{user.email}</Text>
 
-            <TouchableOpacity
-              onPress={() => {
-                logout();
-              }}
-            >
+            <TouchableOpacity onPress={() => logout()}>
               <Text style={styles.headerAuth}>Logout</Text>
             </TouchableOpacity>
           </>
@@ -54,7 +70,9 @@ function Layout() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Layout />
+      <CartProvider>
+        <Layout />
+      </CartProvider>
     </AuthProvider>
   );
 }
@@ -75,19 +93,9 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
 
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
   cartIcon: {
     width: 28,
     height: 28,
-  },
-
-  headerRight: {
-    flexDirection: 'row',
-    gap: 12,
   },
 
   headerAuth: {
@@ -117,5 +125,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+
+  menuText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  headerLeft: {
+    flex: 1,
+  },
+
+  headerCenter: {
+    flex: 2,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 30,
+  },
+
+  headerRight: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
   },
 });
