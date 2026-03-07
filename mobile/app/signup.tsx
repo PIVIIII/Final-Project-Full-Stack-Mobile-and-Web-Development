@@ -6,16 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleSignup = async () => {
     setLoading(true);
     setError('');
+
     try {
       const res = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
@@ -24,16 +28,20 @@ export default function Signup() {
         },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         setError(data);
       } else {
-        setError('');
         alert('Signup success!');
+        login(email); // อัปเดต context
+        router.back(); // กลับไปหน้าเดิม
       }
     } catch (err) {
       setError('Network error');
     }
+
     setLoading(false);
   };
 
@@ -48,6 +56,7 @@ export default function Signup() {
         onChangeText={setEmail}
         autoCapitalize="none"
       />
+
       <TextInput
         placeholder="Password"
         secureTextEntry

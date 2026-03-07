@@ -6,16 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
     setError('');
+
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
@@ -24,17 +28,19 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         setError(data);
       } else {
-        // TODO: handle token or user info
-        setError('');
-        alert('Login success!');
+        login(email); // อัปเดต context
+        router.back(); // กลับไปหน้าเดิม
       }
     } catch (err) {
       setError('Network error');
     }
+
     setLoading(false);
   };
 

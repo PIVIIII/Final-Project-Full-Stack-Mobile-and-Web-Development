@@ -30,17 +30,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* top right */}
-      <View style={styles.auth}>
-        <Link href="/login" asChild>
-          <Text style={styles.authText}>Login</Text>
-        </Link>
-
-        <Link href="/signup" asChild>
-          <Text style={styles.authText}>Sign Up</Text>
-        </Link>
-      </View>
-
       {/* center content */}
       <View style={styles.centerBox}>
         <TouchableOpacity onPress={handlePress}>

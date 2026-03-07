@@ -5,9 +5,11 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Image,
+  SafeAreaView,
 } from 'react-native';
+import { Link, Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { router } from 'expo-router';
 
 type Product = {
   _id?: string;
@@ -18,6 +20,8 @@ type Product = {
 };
 
 export default function ProductsScreen() {
+  const { email } = useLocalSearchParams();
+
   const API_URL = 'http://localhost:5000/api/products';
 
   const [search, setSearch] = useState('');
@@ -38,12 +42,9 @@ export default function ProductsScreen() {
     );
   };
 
-  // Filter
   const filteredProducts = products.filter((p: Product) => {
-    // search เฉพาะชื่อสินค้า
     const nameMatch = p.name?.toLowerCase().includes(search.toLowerCase());
 
-    // tag filter (OR logic)
     const tagMatch =
       selectedTags.length === 0 ||
       (Array.isArray(p.tags) &&
@@ -79,56 +80,109 @@ export default function ProductsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🐱 สินค้าสำหรับแมว</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
+      {/* CONTENT */}
+      <View style={styles.container}>
+        <Text style={styles.title}>🐱 สินค้าสำหรับแมว</Text>
 
-      {/* SEARCH */}
-      <TextInput
-        placeholder="Search"
-        style={styles.search}
-        value={search}
-        onChangeText={setSearch}
-      />
+        <TextInput
+          placeholder="Search"
+          style={styles.search}
+          value={search}
+          onChangeText={setSearch}
+        />
 
-      {/* TAG FILTER */}
-      <View style={styles.tagFilter}>
-        {allTags.map((tag) => (
-          <TouchableOpacity
-            key={tag}
-            style={[
-              styles.filterTag,
-              selectedTags.includes(tag) && styles.activeTag,
-            ]}
-            onPress={() => toggleTag(tag)}
-          >
-            <Text
+        {/* TAG FILTER */}
+        <View style={styles.tagFilter}>
+          {allTags.map((tag) => (
+            <TouchableOpacity
+              key={tag}
               style={[
-                styles.filterTagText,
-                selectedTags.includes(tag) && styles.activeTagText,
+                styles.filterTag,
+                selectedTags.includes(tag) && styles.activeTag,
               ]}
+              onPress={() => toggleTag(tag)}
             >
-              {tag}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.filterTagText,
+                  selectedTags.includes(tag) && styles.activeTagText,
+                ]}
+              >
+                {tag}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item, index) => item._id || item.id || index.toString()}
-        renderItem={renderItem}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-      />
-    </View>
+        <FlatList
+          data={filteredProducts}
+          keyExtractor={(item, index) =>
+            item._id || item.id || index.toString()
+          }
+          renderItem={renderItem}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#222',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#f2f2f2',
     padding: 20,
+  },
+
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#222',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+
+  headerTitle: {
+    color: '#ff8c42',
+    fontWeight: 'bold',
+    fontSize: 22,
+  },
+
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  cartIcon: {
+    width: 28,
+    height: 28,
+  },
+
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  headerAuth: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  headerUser: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 
   title: {
