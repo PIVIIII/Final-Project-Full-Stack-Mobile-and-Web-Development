@@ -5,6 +5,7 @@ import StepIndicator from '../../components/StepIndicator';
 
 export default function Review() {
   const { formData, resetForm } = useSignupStore();
+  const isSeller = formData.role === 'seller';
 
   const submit = async () => {
     await fetch('http://localhost:5000/api/auth/register', {
@@ -20,7 +21,7 @@ export default function Review() {
 
   return (
     <View style={styles.bg}>
-      <View style={styles.card}>
+      <View style={[styles.card, isSeller && styles.cardSeller]}>
         <StepIndicator step={3} />
 
         <Text style={styles.title}>Review</Text>
@@ -38,7 +39,10 @@ export default function Review() {
             <Text style={styles.buttonText}>Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={submit}>
+          <TouchableOpacity
+            style={[styles.button, isSeller && styles.buttonSeller]}
+            onPress={submit}
+          >
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
         </View>
@@ -64,6 +68,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  cardSeller: {
+    borderTopWidth: 6,
+    borderTopColor: '#4CAF50',
+  },
+
   title: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -83,6 +92,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff7f50',
     padding: 12,
     borderRadius: 10,
+  },
+
+  buttonSeller: {
+    backgroundColor: '#4CAF50',
   },
 
   back: {

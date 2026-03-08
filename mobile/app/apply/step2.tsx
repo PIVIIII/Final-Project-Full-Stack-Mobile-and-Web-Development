@@ -11,7 +11,8 @@ import { useSignupStore } from '../../store/useSignupStore';
 import StepIndicator from '../../components/StepIndicator';
 
 export default function Step2() {
-  const { updateFormData } = useSignupStore();
+  const { updateFormData, formData } = useSignupStore();
+  const isSeller = formData.role === 'seller';
 
   const {
     control,
@@ -26,10 +27,12 @@ export default function Step2() {
 
   return (
     <View style={styles.bg}>
-      <View style={styles.card}>
+      <View style={[styles.card, isSeller && styles.cardSeller]}>
         <StepIndicator step={2} />
 
-        <Text style={styles.title}>Step 2 : Profile</Text>
+        <Text style={styles.title}>
+          {isSeller ? 'Store Profile' : 'Step 2 : Profile'}
+        </Text>
 
         <View style={styles.inputGroup}>
           <Controller
@@ -44,7 +47,11 @@ export default function Step2() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, errors.username && styles.inputError]}
+                style={[
+                  styles.input,
+                  isSeller && styles.inputSeller,
+                  errors.username && styles.inputError,
+                ]}
                 placeholder="Username"
                 value={value}
                 onChangeText={onChange}
@@ -70,7 +77,11 @@ export default function Step2() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, errors.phone && styles.inputError]}
+                style={[
+                  styles.input,
+                  isSeller && styles.inputSeller,
+                  errors.phone && styles.inputError,
+                ]}
                 placeholder="Phone"
                 value={value}
                 onChangeText={onChange}
@@ -89,7 +100,7 @@ export default function Step2() {
             name="link"
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={styles.input}
+                style={[styles.input, isSeller && styles.inputSeller]}
                 placeholder="Link"
                 value={value}
                 onChangeText={onChange}
@@ -109,7 +120,11 @@ export default function Step2() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, errors.address && styles.inputError]}
+                style={[
+                  styles.input,
+                  isSeller && styles.inputSeller,
+                  errors.address && styles.inputError,
+                ]}
                 placeholder="Address"
                 value={value}
                 onChangeText={onChange}
@@ -130,7 +145,7 @@ export default function Step2() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, isSeller && styles.buttonSeller]}
             onPress={handleSubmit(onSubmit)}
           >
             <Text style={styles.buttonText}>Next</Text>
@@ -159,6 +174,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  cardSeller: {
+    borderTopWidth: 6,
+    borderTopColor: '#4CAF50',
+  },
+
   title: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -176,6 +196,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#f8c390',
+  },
+
+  inputSeller: {
+    backgroundColor: '#e8f5e9',
+    borderColor: '#4CAF50',
   },
 
   inputError: {
@@ -198,6 +223,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 10,
+  },
+
+  buttonSeller: {
+    backgroundColor: '#4CAF50',
   },
 
   back: {

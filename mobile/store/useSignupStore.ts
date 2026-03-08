@@ -7,6 +7,7 @@ type FormData = {
   phone: string;
   link?: string;
   address: string;
+  role: 'buyer' | 'seller';
 };
 
 type Store = {
@@ -23,6 +24,7 @@ export const useSignupStore = create<Store>((set) => ({
     phone: '',
     link: '',
     address: '',
+    role: 'buyer',
   },
 
   updateFormData: (data) =>
@@ -39,6 +41,7 @@ export const useSignupStore = create<Store>((set) => ({
         phone: '',
         link: '',
         address: '',
+        role: 'buyer',
       },
     }),
 }));

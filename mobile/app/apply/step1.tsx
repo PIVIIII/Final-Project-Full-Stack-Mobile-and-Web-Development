@@ -11,7 +11,8 @@ import { useSignupStore } from '../../store/useSignupStore';
 import StepIndicator from '../../components/StepIndicator';
 
 export default function Step1() {
-  const { updateFormData } = useSignupStore();
+  const { updateFormData, formData } = useSignupStore();
+  const isSeller = formData.role === 'seller';
 
   const {
     control,
@@ -26,10 +27,12 @@ export default function Step1() {
 
   return (
     <View style={styles.bg}>
-      <View style={styles.card}>
+      <View style={[styles.card, isSeller && styles.cardSeller]}>
         <StepIndicator step={1} />
 
-        <Text style={styles.title}>Step 1 : Account</Text>
+        <Text style={styles.title}>
+          {isSeller ? 'Seller Account' : 'Step 1 : Account'}
+        </Text>
 
         <View style={styles.inputGroup}>
           <Controller
@@ -44,7 +47,11 @@ export default function Step1() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
+                style={[
+                  styles.input,
+                  isSeller && styles.inputSeller,
+                  errors.email && styles.inputError,
+                ]}
                 placeholder="Email"
                 value={value}
                 onChangeText={onChange}
@@ -70,7 +77,11 @@ export default function Step1() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
+                style={[
+                  styles.input,
+                  isSeller && styles.inputSeller,
+                  errors.password && styles.inputError,
+                ]}
                 placeholder="Password"
                 secureTextEntry
                 value={value}
@@ -87,7 +98,7 @@ export default function Step1() {
         </View>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, isSeller && styles.buttonSeller]}
           onPress={handleSubmit(onSubmit)}
         >
           <Text style={styles.buttonText}>Next</Text>
@@ -115,6 +126,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  cardSeller: {
+    borderTopWidth: 6,
+    borderTopColor: '#4CAF50',
+  },
+
   title: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -134,6 +150,11 @@ const styles = StyleSheet.create({
     borderColor: '#f8c390',
   },
 
+  inputSeller: {
+    backgroundColor: '#e8f5e9',
+    borderColor: '#4CAF50',
+  },
+
   inputError: {
     borderColor: 'red',
   },
@@ -148,6 +169,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 10,
+  },
+
+  buttonSeller: {
+    backgroundColor: '#4CAF50',
   },
 
   buttonText: {
