@@ -3,7 +3,13 @@ import Product from '../models/Product.js';
 // GET /api/products
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const filter = {};
+
+    if (req.query.minPrice) {
+      filter.price = { $gte: Number(req.query.minPrice) };
+    }
+
+    const products = await Product.find(filter);
 
     res.json(products);
   } catch (err) {
@@ -25,12 +31,28 @@ export const getProduct = async (req, res) => {
 // POST /api/products
 export const createProduct = async (req, res) => {
   try {
+    if (req.body.price < 0) {
+      return res.status(400).json({
+        error: 'Price cannot be less than 0',
+      });
+    }
+
     const product = new Product(req.body);
 
     await product.save();
 
-    res.json(product);
+    res.status(201).json(product);
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        error: 'duplicate key error',
+      });
+    }
+
+    if (err.name === 'ValidationError') {
+      return res.status(400).json(err.message);
+    }
+
     res.status(500).json(err);
   }
 };
@@ -38,25 +60,45 @@ export const createProduct = async (req, res) => {
 // GET /api/products/search
 export const searchProducts = async (req, res) => {
   try {
-    const { keyword, tag, category } = req.query;
+    const { keyword, tags, page = 1, limit = 10 } = req.query;
 
     let filter = {};
 
+    // keyword search
     if (keyword) {
       filter.name = { $regex: keyword, $options: 'i' };
     }
 
-    if (tag) {
-      filter.tags = tag;
+    // C2: แปลง string -> array
+    if (tags) {
+      const tagArray = tags.split(',');
+
+      // C1: ต้องมี tag ครบทุกตัว
+      filter.tags = { $all: tagArray };
     }
 
-    if (category) {
-      filter.category_id = category;
-    }
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
 
-    const products = await Product.find(filter);
+    // C3: pagination logic
+    const skip = (pageNumber - 1) * limitNumber;
 
-    res.json(products);
+    const products = await Product.find(filter)
+      .skip(skip)
+      .limit(limitNumber)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments(filter);
+
+    // C4: metadata
+    res.json({
+      data: products,
+      metadata: {
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / limitNumber),
+        currentPage: pageNumber,
+      },
+    });
   } catch (err) {
     res.status(500).json(err);
   }
