@@ -38,6 +38,8 @@ export const register = async (req, res) => {
       link: req.body.link,
       address: req.body.address,
       role: req.body.role || 'buyer',
+      isDeleted: false,
+      deletedAt: null,
     });
 
     await user.save();
@@ -145,6 +147,68 @@ export const checkEmail = async (req, res) => {
     res.json({ exists: false });
   } catch (err) {
     console.log(err);
+    res.status(500).json(err);
+  }
+};
+
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find({ isDeleted: false }).select('-password');
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const currentUser = req.user;
+
+    if (currentUser.role !== 'admin' && currentUser.id !== userId) {
+      return res.status(403).json('You can update only your account');
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          username: req.body.username,
+          phone: req.body.phone,
+          link: req.body.link,
+          address: req.body.address,
+        },
+      },
+      { new: true },
+    ).select('-password');
+
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const currentUser = req.user;
+
+    if (currentUser.role !== 'admin' && currentUser.id !== userId) {
+      return res.status(403).json('You can delete only your account');
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      isDeleted: true,
+      deletedAt: new Date(),
+    });
+
+    res.json({
+      message: 'ลบข้อมูลสำเร็จ',
+    });
+  } catch (err) {
     res.status(500).json(err);
   }
 };

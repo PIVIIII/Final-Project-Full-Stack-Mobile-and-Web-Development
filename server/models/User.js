@@ -35,13 +35,23 @@ const UserSchema = new mongoose.Schema(
     address: {
       type: String,
       required: true,
-      minlength: 20, // ✅ ต้อง ≥ 20 ตัวอักษร
+      minlength: 20,
     },
 
     role: {
       type: String,
       enum: ['buyer', 'seller', 'admin'],
       default: 'buyer',
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true },
