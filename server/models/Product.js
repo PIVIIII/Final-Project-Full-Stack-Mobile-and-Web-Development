@@ -11,15 +11,22 @@ const ProductSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true, // ✅ C4 ชื่อสินค้าห้ามซ้ำ
+      unique: true,
     },
 
     description: String,
 
-    price: {
+    originalPrice: {
       type: Number,
       required: true,
-      min: [0, 'Price cannot be less than 0'], // ✅ C2
+      min: [0, 'Price cannot be less than 0'],
+    },
+
+    discountPercent: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
     },
 
     stock: {
@@ -27,14 +34,12 @@ const ProductSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // ✅ C3 enum category
     category: {
       type: String,
       enum: ['food', 'toy', 'litter', 'accessory', 'health'],
       required: true,
     },
 
-    // ✅ tag สำหรับสินค้าแมว
     tags: {
       type: [String],
       enum: [
@@ -51,7 +56,16 @@ const ProductSchema = new mongoose.Schema(
       ],
     },
   },
-  { timestamps: true }, // ✅ C6
+  {
+    timestamps: true,
+
+บ    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
+
+ProductSchema.virtual('salePrice').get(function () {
+  return this.originalPrice * ((100 - this.discountPercent) / 100);
+});
 
 export default mongoose.model('Product', ProductSchema);

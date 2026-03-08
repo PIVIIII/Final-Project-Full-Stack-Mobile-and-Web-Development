@@ -120,3 +120,42 @@ export const updateProduct = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+// GET /api/products/stats
+export const getProductStats = async (req, res) => {
+  try {
+    const stats = await Product.aggregate([
+      {
+        $addFields: {
+          salePrice: {
+            $multiply: [
+              '$originalPrice',
+              { $divide: [{ $subtract: [100, '$discountPercent'] }, 100] },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          maxSalePrice: { $max: '$salePrice' },
+          avgSalePrice: { $avg: '$salePrice' },
+          totalProducts: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // ✅ C5 ถ้าไม่มีข้อมูล
+    if (stats.length === 0) {
+      return res.json({
+        maxSalePrice: null,
+        avgSalePrice: null,
+        totalProducts: 0,
+      });
+    }
+
+    res.json(stats[0]);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
