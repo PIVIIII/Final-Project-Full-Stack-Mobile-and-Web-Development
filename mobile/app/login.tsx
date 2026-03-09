@@ -30,14 +30,15 @@ export default function Login() {
       });
 
       const data = await res.json();
+      console.log('Login response:', data);
 
       if (!res.ok) {
         setError(data);
       } else {
-        login(email, data.user.role);
+        login(data.user._id, data.user.email, data.user.role);
         console.log('data', data);
 
-        router.back(); // กลับไปหน้าเดิม
+        router.replace('/');
       }
     } catch (err) {
       setError('Network error');

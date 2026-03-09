@@ -29,6 +29,12 @@ function Header() {
             <Text style={styles.menuText}>CART</Text>
           </TouchableOpacity>
         </Link>
+
+        <Link href="/profile" asChild>
+          <TouchableOpacity>
+            <Text style={styles.menuText}>PROFILE</Text>
+          </TouchableOpacity>
+        </Link>
       </View>
 
       {/* RIGHT */}
