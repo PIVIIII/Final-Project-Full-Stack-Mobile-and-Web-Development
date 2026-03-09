@@ -18,6 +18,13 @@ function Header() {
 
       {/* CENTER */}
       <View style={styles.headerCenter}>
+        {user?.role === 'seller' || user?.role === 'admin' ? (
+          <Link href="/add-product" asChild>
+            <TouchableOpacity>
+              <Text style={styles.menuText}>ADD</Text>
+            </TouchableOpacity>
+          </Link>
+        ) : null}
         <Link href="/products" asChild>
           <TouchableOpacity>
             <Text style={styles.menuText}>PRODUCT</Text>
