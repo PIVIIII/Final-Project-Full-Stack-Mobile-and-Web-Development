@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,8 @@ export default function AddProduct() {
   const [category, setCategory] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
 
+  const [errors, setErrors] = useState<any>({});
+
   if (!user || (user.role !== 'admin' && user.role !== 'seller')) {
     return (
       <View style={styles.center}>
@@ -53,11 +56,20 @@ export default function AddProduct() {
     }
   };
 
+  const validate = () => {
+    let newErrors: any = {};
+
+    if (!name) newErrors.name = 'Product name required';
+    if (!price) newErrors.price = 'Price required';
+    if (!category) newErrors.category = 'Category required';
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!name || !price || !category) {
-      Alert.alert('Name, price, category required');
-      return;
-    }
+    if (!validate()) return;
 
     try {
       const res = await fetch('http://localhost:5000/api/products', {
@@ -91,56 +103,70 @@ export default function AddProduct() {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Add Product</Text>
+  const numberOnly = (value: string, setter: any) => {
+    const filtered = value.replace(/[^0-9]/g, '');
+    setter(filtered);
+  };
 
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 80 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {' '}
+      <Text style={styles.title}>Add Product</Text>
+      {/* NAME */}
       <TextInput
         placeholder="Product name"
-        style={styles.input}
+        style={[styles.input, errors.name && styles.inputError]}
         value={name}
         onChangeText={setName}
       />
-
+      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+      {/* DESCRIPTION */}
       <TextInput
         placeholder="Description"
         style={styles.input}
         value={description}
         onChangeText={setDescription}
       />
-
+      {/* PRICE */}
       <TextInput
         placeholder="Price"
-        style={styles.input}
+        style={[styles.input, errors.price && styles.inputError]}
         keyboardType="numeric"
         value={price}
-        onChangeText={setPrice}
+        onChangeText={(v) => numberOnly(v, setPrice)}
       />
-
+      {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+      {/* STOCK */}
       <TextInput
         placeholder="Stock"
         style={styles.input}
         keyboardType="numeric"
         value={stock}
-        onChangeText={setStock}
+        onChangeText={(v) => numberOnly(v, setStock)}
       />
-
+      {/* DISCOUNT */}
       <TextInput
         placeholder="Discount %"
         style={styles.input}
         keyboardType="numeric"
         value={discount}
-        onChangeText={setDiscount}
+        onChangeText={(v) => numberOnly(v, setDiscount)}
       />
-
       {/* CATEGORY */}
       <Text style={styles.section}>Category</Text>
-
       <View style={styles.tagContainer}>
         {categories.map((c) => (
           <TouchableOpacity
             key={c}
-            style={[styles.tag, category === c && styles.tagSelected]}
+            style={[
+              styles.tag,
+              category === c && styles.tagSelected,
+              errors.category && styles.tagError,
+            ]}
             onPress={() => setCategory(c)}
           >
             <Text
@@ -151,10 +177,11 @@ export default function AddProduct() {
           </TouchableOpacity>
         ))}
       </View>
-
+      {errors.category && (
+        <Text style={styles.errorText}>{errors.category}</Text>
+      )}
       {/* TAGS */}
       <Text style={styles.section}>Tags</Text>
-
       <View style={styles.tagContainer}>
         {tagOptions.map((t) => (
           <TouchableOpacity
@@ -173,11 +200,10 @@ export default function AddProduct() {
           </TouchableOpacity>
         ))}
       </View>
-
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Create Product</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -209,7 +235,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 14,
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+
+  inputError: {
+    borderColor: 'red',
+  },
+
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
 
   section: {
@@ -234,6 +271,11 @@ const styles = StyleSheet.create({
 
   tagSelected: {
     backgroundColor: '#ff8c42',
+  },
+
+  tagError: {
+    borderWidth: 1,
+    borderColor: 'red',
   },
 
   tagText: {
