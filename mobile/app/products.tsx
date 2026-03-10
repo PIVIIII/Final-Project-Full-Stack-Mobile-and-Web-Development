@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
 
 type Product = {
@@ -27,15 +28,58 @@ export default function ProductsScreen() {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const allTags = ['food', 'toy', 'litter'];
+  const allTags = ['food', 'toy', 'litter', 'accessory', 'health'];
+
+  /* ---------------- FETCH PRODUCTS ---------------- */
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(false);
+
+      const res = await fetch(API_URL);
+
+      if (!res.ok) throw new Error('fetch error');
+
+      const data = await res.json();
+
+      setProducts(data);
+    } catch (err) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch(API_URL)
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.log(err));
-  }, []);
+    fetchProducts();
+  }, [fetchProducts]);
+
+  /* ---------------- DEBOUNCE SEARCH ---------------- */
+
+  useEffect(() => {
+    const delay = setTimeout(async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${API_URL}/search?q=${searchInput}`);
+
+        const data = await res.json();
+
+        setProducts(data.data); // เพราะ backend ส่ง {data:[], metadata:{}}
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delay);
+  }, [searchInput]);
+  /* ---------------- TAG FILTER ---------------- */
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -43,9 +87,7 @@ export default function ProductsScreen() {
     );
   };
 
-  const handleSearch = () => {
-    setSearch(searchInput);
-  };
+  /* ---------------- FILTER PRODUCTS ---------------- */
 
   const filteredProducts = products.filter((p) => {
     const nameMatch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -57,6 +99,8 @@ export default function ProductsScreen() {
 
     return nameMatch && tagMatch;
   });
+
+  /* ---------------- PRODUCT CARD ---------------- */
 
   const renderItem = ({ item }: { item: Product }) => {
     const isFav = favorites.includes(item._id);
@@ -71,9 +115,10 @@ export default function ProductsScreen() {
           })
         }
       >
-        <Text style={styles.name}>
-          {item.name} {isFav && '❤️'}
-        </Text>
+        <View style={styles.cardTop}>
+          <Text style={styles.name}>{item.name}</Text>
+          {isFav && <Text style={styles.fav}>❤️</Text>}
+        </View>
 
         {item.tags && (
           <View style={styles.tagsContainer}>
@@ -85,10 +130,37 @@ export default function ProductsScreen() {
           </View>
         )}
 
-        <Text style={styles.price}>{item.originalPrice} บาท</Text>
+        <Text style={styles.price}>฿{item.originalPrice}</Text>
       </TouchableOpacity>
     );
   };
+
+  /* ---------------- LOADING SKELETON ---------------- */
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#ff8c42" />
+        <Text>Loading products...</Text>
+      </View>
+    );
+  }
+
+  /* ---------------- ERROR STATE ---------------- */
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>⚠️ Error loading products</Text>
+
+        <TouchableOpacity style={styles.retryBtn} onPress={fetchProducts}>
+          <Text style={{ color: 'white' }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  /* ---------------- MAIN UI ---------------- */
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -97,18 +169,16 @@ export default function ProductsScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>🐱 Cat Products</Text>
 
-        <View style={styles.searchRow}>
-          <TextInput
-            placeholder="Search"
-            style={styles.search}
-            value={searchInput}
-            onChangeText={setSearchInput}
-          />
+        {/* SEARCH */}
 
-          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-            <Text style={styles.searchBtnText}>Search</Text>
-          </TouchableOpacity>
-        </View>
+        <TextInput
+          placeholder="Search products..."
+          style={styles.search}
+          value={searchInput}
+          onChangeText={setSearchInput}
+        />
+
+        {/* TAG FILTER */}
 
         <View style={styles.tagFilter}>
           {allTags.map((tag) => (
@@ -132,8 +202,12 @@ export default function ProductsScreen() {
           ))}
         </View>
 
+        {/* EMPTY STATE */}
+
         {filteredProducts.length === 0 ? (
-          <Text style={styles.noResult}>No results found</Text>
+          <Text style={styles.noResult}>
+            No products found for "{searchInput}"
+          </Text>
         ) : (
           <FlatList
             data={filteredProducts}
@@ -148,35 +222,34 @@ export default function ProductsScreen() {
   );
 }
 
+/* ---------------- STYLES ---------------- */
+
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#222' },
+  safeArea: { flex: 1, backgroundColor: '#111' },
 
-  container: { flex: 1, backgroundColor: '#f2f2f2', padding: 20 },
+  container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
 
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 15 },
-
-  searchRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
 
   search: {
-    flex: 1,
     backgroundColor: 'white',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
+    marginBottom: 15,
   },
 
-  searchBtn: {
-    backgroundColor: '#ff8c42',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 10,
+  tagFilter: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 10,
   },
-
-  searchBtnText: { color: 'white', fontWeight: 'bold' },
-
-  tagFilter: { flexDirection: 'row', marginBottom: 20, gap: 10 },
 
   filterTag: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: '#ddd',
@@ -190,38 +263,61 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 15,
+    borderRadius: 16,
+    padding: 16,
     width: '48%',
-    marginBottom: 15,
-    alignItems: 'center',
+    marginBottom: 16,
     elevation: 3,
   },
 
-  name: { fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  name: { fontSize: 15, fontWeight: 'bold', flex: 1 },
+
+  fav: { fontSize: 18 },
 
   tagsContainer: {
     flexDirection: 'row',
-    marginVertical: 5,
-    gap: 5,
     flexWrap: 'wrap',
-    justifyContent: 'center',
+    gap: 5,
+    marginTop: 6,
   },
 
   tag: {
-    backgroundColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    backgroundColor: '#eee',
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    fontSize: 12,
-    color: '#333',
+    borderRadius: 6,
+    fontSize: 11,
   },
 
   price: {
-    marginTop: 5,
-    fontSize: 14,
-    color: '#ff8c42',
+    marginTop: 10,
     fontWeight: 'bold',
+    color: '#ff8c42',
+    fontSize: 16,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  error: {
+    color: 'red',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+
+  retryBtn: {
+    backgroundColor: '#ff8c42',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
 
   noResult: {

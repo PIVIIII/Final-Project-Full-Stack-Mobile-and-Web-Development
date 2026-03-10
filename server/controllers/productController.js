@@ -6,7 +6,7 @@ export const getProducts = async (req, res) => {
     const filter = {};
 
     if (req.query.minPrice) {
-      filter.price = { $gte: Number(req.query.minPrice) };
+      filter.originalPrice = { $gte: Number(req.query.minPrice) };
     }
 
     const products = await Product.find(filter);
@@ -31,7 +31,7 @@ export const getProduct = async (req, res) => {
 // POST /api/products
 export const createProduct = async (req, res) => {
   try {
-    if (req.body.price < 0) {
+    if (req.body.originalPrice < 0) {
       return res.status(400).json({
         error: 'Price cannot be less than 0',
       });
@@ -58,29 +58,27 @@ export const createProduct = async (req, res) => {
 };
 
 // GET /api/products/search
+// GET /api/products/search
 export const searchProducts = async (req, res) => {
   try {
-    const { keyword, tags, page = 1, limit = 10 } = req.query;
+    const { q, keyword, tags, page = 1, limit = 10 } = req.query;
 
     let filter = {};
 
-    // keyword search
-    if (keyword) {
-      filter.name = { $regex: keyword, $options: 'i' };
+    // รองรับทั้ง q และ keyword
+    const searchText = q || keyword;
+
+    if (searchText) {
+      filter.name = { $regex: searchText, $options: 'i' };
     }
 
-    // C2: แปลง string -> array
     if (tags) {
       const tagArray = tags.split(',');
-
-      // C1: ต้องมี tag ครบทุกตัว
       filter.tags = { $all: tagArray };
     }
 
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
-
-    // C3: pagination logic
     const skip = (pageNumber - 1) * limitNumber;
 
     const products = await Product.find(filter)
@@ -90,7 +88,6 @@ export const searchProducts = async (req, res) => {
 
     const totalProducts = await Product.countDocuments(filter);
 
-    // C4: metadata
     res.json({
       data: products,
       metadata: {
