@@ -9,23 +9,26 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useState, useEffect } from 'react';
+import { useFavoriteStore } from '../store/useFavoriteStore';
 
 type Product = {
   _id: string;
   name: string;
-  price: number;
+  originalPrice: number;
   tags?: string[];
 };
 
 export default function ProductsScreen() {
   const API_URL = 'http://localhost:5000/api/products';
 
+  const favorites = useFavoriteStore((state) => state.favorites);
+
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const allTags = ['food', 'toy', 'electronic'];
+  const allTags = ['food', 'toy', 'litter'];
 
   useEffect(() => {
     fetch(API_URL)
@@ -55,40 +58,45 @@ export default function ProductsScreen() {
     return nameMatch && tagMatch;
   });
 
-  const renderItem = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() =>
-        router.push({
-          pathname: '/product/[id]',
-          params: { id: item._id },
-        })
-      }
-    >
-      <Text style={styles.name}>{item.name}</Text>
+  const renderItem = ({ item }: { item: Product }) => {
+    const isFav = favorites.includes(item._id);
 
-      {item.tags && item.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag) => (
-            <Text key={tag} style={styles.tag}>
-              {tag}
-            </Text>
-          ))}
-        </View>
-      )}
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() =>
+          router.push({
+            pathname: '/product/[id]',
+            params: { id: item._id },
+          })
+        }
+      >
+        <Text style={styles.name}>
+          {item.name} {isFav && '❤️'}
+        </Text>
 
-      <Text style={styles.price}>{item.price} บาท</Text>
-    </TouchableOpacity>
-  );
+        {item.tags && (
+          <View style={styles.tagsContainer}>
+            {item.tags.map((tag) => (
+              <Text key={tag} style={styles.tag}>
+                {tag}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.price}>{item.originalPrice} บาท</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.container}>
-        <Text style={styles.title}>🐱 สินค้าสำหรับแมว</Text>
+        <Text style={styles.title}>🐱 Cat Products</Text>
 
-        {/* SEARCH */}
         <View style={styles.searchRow}>
           <TextInput
             placeholder="Search"
@@ -102,7 +110,6 @@ export default function ProductsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* TAG FILTER */}
         <View style={styles.tagFilter}>
           {allTags.map((tag) => (
             <TouchableOpacity
@@ -125,7 +132,6 @@ export default function ProductsScreen() {
           ))}
         </View>
 
-        {/* PRODUCT LIST */}
         {filteredProducts.length === 0 ? (
           <Text style={styles.noResult}>No results found</Text>
         ) : (
@@ -143,28 +149,13 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#222',
-  },
+  safeArea: { flex: 1, backgroundColor: '#222' },
 
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 20,
-  },
+  container: { flex: 1, backgroundColor: '#f2f2f2', padding: 20 },
 
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 15 },
 
-  searchRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
+  searchRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
 
   search: {
     flex: 1,
@@ -180,16 +171,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  searchBtnText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+  searchBtnText: { color: 'white', fontWeight: 'bold' },
 
-  tagFilter: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    gap: 10,
-  },
+  tagFilter: { flexDirection: 'row', marginBottom: 20, gap: 10 },
 
   filterTag: {
     paddingHorizontal: 12,
@@ -198,18 +182,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
 
-  activeTag: {
-    backgroundColor: '#ff8c42',
-  },
+  activeTag: { backgroundColor: '#ff8c42' },
 
-  filterTagText: {
-    color: '#333',
-  },
+  filterTagText: { color: '#333' },
 
-  activeTagText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+  activeTagText: { color: 'white', fontWeight: 'bold' },
 
   card: {
     backgroundColor: 'white',
@@ -221,11 +198,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  name: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+  name: { fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
 
   tagsContainer: {
     flexDirection: 'row',
