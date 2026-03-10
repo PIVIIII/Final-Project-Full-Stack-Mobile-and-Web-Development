@@ -55,6 +55,14 @@ const ProductSchema = new mongoose.Schema(
         'grooming',
       ],
     },
+    images: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: (v) => v.length >= 1 && v.length <= 5,
+        message: 'Images must be between 1 and 5 files',
+      },
+    },
   },
   {
     timestamps: true,

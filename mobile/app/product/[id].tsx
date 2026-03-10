@@ -4,6 +4,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -17,6 +19,7 @@ type Product = {
   originalPrice: number;
   discountPercent: number;
   stock: number;
+  images: string[];
 };
 
 export default function ProductDetail() {
@@ -28,20 +31,17 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   const API_URL = `http://localhost:5000/api/products/${id}`;
 
   useEffect(() => {
     fetch(API_URL)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('not-found');
-        }
-        return res.json();
+      .then((res) => res.json())
+      .then((data) => {
+        setProduct(data);
+        setSelectedImage(0);
       })
-      .then((data) => setProduct(data))
-      .catch(() => setProduct(null))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -49,16 +49,14 @@ export default function ProductDetail() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
-        <Text>Loading...</Text>
       </View>
     );
   }
 
-  // ✅ C4 NotFound Handling
   if (!product) {
     return (
       <View style={styles.center}>
-        <Text style={{ fontSize: 20 }}>Product not found</Text>
+        <Text>Product not found</Text>
       </View>
     );
   }
@@ -68,166 +66,211 @@ export default function ProductDetail() {
 
   const isFav = favorites.includes(product._id);
 
-  const increase = () => {
-    if (qty < product.stock) setQty((prev) => prev + 1);
-  };
-
-  const decrease = () => {
-    if (qty > 1) setQty((prev) => prev - 1);
-  };
-
-  const handleAdd = () => {
-    addToCart(
-      {
-        id: product._id,
-        name: product.name,
-        price: salePrice,
-        stock: product.stock,
-      },
-      qty,
-    );
-
-    setToast(true);
-
-    setTimeout(() => {
-      setToast(false);
-    }, 2000);
-  };
-
   return (
-    <View style={styles.container}>
-      {/* ✅ C3 Back Button */}
+    <ScrollView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.back}>← Back</Text>
       </TouchableOpacity>
 
-      <View style={styles.header}>
-        <Text style={styles.name}>{product.name}</Text>
-        <TouchableOpacity
-          onPress={() => {
-            toggleFavorite(product._id);
-            router.back();
-          }}
-        >
-          <Text style={styles.fav}>{isFav ? '❤️' : '🤍'}</Text>
-        </TouchableOpacity>{' '}
+      {/* IMAGE SECTION */}
+      <View style={styles.imageRow}>
+        {product.images?.map((img, i) => (
+          <Image key={i} source={{ uri: img }} style={styles.productImage} />
+        ))}
       </View>
+      {/* PRODUCT CARD */}
+      <View style={styles.card}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{product.name}</Text>
 
-      {product.description && (
-        <Text style={styles.description}>{product.description}</Text>
-      )}
-
-      <Text style={styles.price}>฿ {salePrice.toFixed(2)}</Text>
-
-      {product.discountPercent > 0 && (
-        <Text style={styles.original}>
-          ฿ {product.originalPrice} (-{product.discountPercent}%)
-        </Text>
-      )}
-
-      <Text style={styles.stock}>Stock: {product.stock}</Text>
-
-      <View style={styles.qtyRow}>
-        <TouchableOpacity onPress={decrease} disabled={qty === 1}>
-          <Text style={[styles.qtyBtn, qty === 1 && styles.disabled]}>-</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.qty}>{qty}</Text>
-
-        <TouchableOpacity onPress={increase} disabled={qty >= product.stock}>
-          <Text
-            style={[styles.qtyBtn, qty >= product.stock && styles.disabled]}
-          >
-            +
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.orderBtn} onPress={handleAdd}>
-        <Text style={styles.orderText}>Add to Cart</Text>
-      </TouchableOpacity>
-
-      {toast && (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>Added to cart</Text>
+          <TouchableOpacity onPress={() => toggleFavorite(product._id)}>
+            <Text style={styles.fav}>{isFav ? '❤️' : '🤍'}</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        <Text style={styles.desc}>{product.description}</Text>
+
+        <Text style={styles.price}>฿ {salePrice.toFixed(2)}</Text>
+
+        <Text style={styles.stock}>Stock: {product.stock}</Text>
+
+        {/* qty */}
+        <View style={styles.qtyRow}>
+          <TouchableOpacity
+            style={styles.qtyBtn}
+            onPress={() => setQty(Math.max(1, qty - 1))}
+          >
+            <Text style={styles.qtyText}>-</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.qty}>{qty}</Text>
+
+          <TouchableOpacity
+            style={styles.qtyBtn}
+            onPress={() => setQty(Math.min(product.stock, qty + 1))}
+          >
+            <Text style={styles.qtyText}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.cartBtn}
+          onPress={() =>
+            addToCart(
+              {
+                id: product._id,
+                name: product.name,
+                price: salePrice,
+                stock: product.stock,
+              },
+              qty,
+            )
+          }
+        >
+          <Text style={styles.cartText}>Add to Cart</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f6f9',
+  },
 
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-  back: { fontSize: 16, marginBottom: 10, color: '#ff8c42' },
+  back: {
+    margin: 20,
+    color: '#ff8c42',
+    fontWeight: 'bold',
+  },
 
-  backBtn: {
-    marginTop: 20,
-    backgroundColor: '#ff8c42',
-    padding: 10,
-    borderRadius: 10,
+  imageSection: {
+    alignItems: 'center',
+  },
+
+  hero: {
+    width: '95%',
+    height: 350,
+    borderRadius: 12,
+  },
+
+  thumbRow: {
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+
+  thumb: {
+    width: 70,
+    height: 70,
+    marginRight: 10,
+    borderRadius: 8,
+  },
+
+  thumbActive: {
+    borderWidth: 2,
+    borderColor: '#ff8c42',
+  },
+
+  card: {
+    backgroundColor: 'white',
+    margin: 15,
+    padding: 20,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
 
-  name: { fontSize: 26, fontWeight: 'bold' },
+  name: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
 
-  fav: { fontSize: 28 },
+  fav: {
+    fontSize: 26,
+  },
 
-  description: { marginTop: 10, fontSize: 16, color: '#444' },
+  desc: {
+    marginTop: 10,
+    color: '#555',
+  },
 
   price: {
-    marginTop: 20,
-    fontSize: 22,
+    marginTop: 15,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#ff8c42',
   },
 
-  original: {
-    textDecorationLine: 'line-through',
+  stock: {
+    marginTop: 10,
     color: 'gray',
   },
-
-  stock: { marginTop: 10, color: 'gray' },
 
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
-    marginTop: 30,
+    marginTop: 20,
   },
 
-  qtyBtn: { fontSize: 30, fontWeight: 'bold' },
-
-  qty: { fontSize: 18 },
-
-  disabled: { opacity: 0.3 },
-
-  orderBtn: {
-    marginTop: 30,
-    backgroundColor: '#ff8c42',
-    padding: 15,
+  qtyBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 10,
+  },
+
+  qtyText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  qty: {
+    marginHorizontal: 20,
+    fontSize: 18,
+  },
+
+  cartBtn: {
+    marginTop: 25,
+    backgroundColor: '#ff8c42',
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
 
-  orderText: { color: 'white', fontWeight: 'bold' },
-
-  toast: {
-    position: 'absolute',
-    bottom: 40,
-    alignSelf: 'center',
-    backgroundColor: '#333',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+  cartText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 
-  toastText: { color: 'white' },
+  imageRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+  },
+
+  productImage: {
+    width: 160,
+    height: 160,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
 });

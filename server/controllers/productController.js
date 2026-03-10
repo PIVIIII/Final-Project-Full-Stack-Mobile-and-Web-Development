@@ -31,33 +31,32 @@ export const getProduct = async (req, res) => {
 // POST /api/products
 export const createProduct = async (req, res) => {
   try {
-    if (req.body.originalPrice < 0) {
+    if (!req.body.images || req.body.images.length === 0) {
       return res.status(400).json({
-        error: 'Price cannot be less than 0',
+        error: 'At least 1 image required',
       });
     }
 
-    const product = new Product(req.body);
+    const product = new Product({
+      seller_id: req.body.seller_id,
+      name: req.body.name,
+      description: req.body.description,
+      originalPrice: Number(req.body.originalPrice),
+      discountPercent: Number(req.body.discountPercent) || 0,
+      stock: Number(req.body.stock) || 0,
+      category: req.body.category,
+      tags: req.body.tags || [],
+      images: req.body.images,
+    });
 
     await product.save();
 
     res.status(201).json(product);
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        error: 'duplicate key error',
-      });
-    }
-
-    if (err.name === 'ValidationError') {
-      return res.status(400).json(err.message);
-    }
-
     res.status(500).json(err);
   }
 };
 
-// GET /api/products/search
 // GET /api/products/search
 export const searchProducts = async (req, res) => {
   try {

@@ -8,11 +8,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 import CurrencyCard from '../components/ui/CurrencyCard';
+import * as ImagePicker from 'expo-image-picker';
 
 const categories = ['food', 'toy', 'litter', 'accessory', 'health'];
 
@@ -37,18 +39,17 @@ export default function AddProduct() {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [discount, setDiscount] = useState('');
-
   const [category, setCategory] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
-
+  const [images, setImages] = useState<string[]>([]);
   const [errors, setErrors] = useState<any>({});
   const [thb, setThb] = useState('');
 
   const thbValue = parseFloat(thb) || 0;
-
   const usd = (thbValue * 0.028).toFixed(2);
   const eur = (thbValue * 0.026).toFixed(2);
   const jpy = (thbValue * 4.1).toFixed(2);
+
   if (!user || (user.role !== 'admin' && user.role !== 'seller')) {
     return (
       <View style={styles.center}>
@@ -73,12 +74,49 @@ export default function AddProduct() {
     if (!category) newErrors.category = 'Category required';
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
+  };
+
+  // convert image -> base64
+  const convertToBase64 = async (uri: string) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const pickImage = async () => {
+    if (images.length >= 5) {
+      Alert.alert('Maximum 5 images allowed');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const base64 = await convertToBase64(result.assets[0].uri);
+      setImages([...images, base64]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
+
+    if (images.length < 1) {
+      Alert.alert('Please upload at least 1 image');
+      return;
+    }
 
     try {
       const res = await fetch('http://localhost:5000/api/products', {
@@ -95,6 +133,7 @@ export default function AddProduct() {
           stock: Number(stock) || 0,
           category,
           tags,
+          images,
         }),
       });
 
@@ -122,38 +161,31 @@ export default function AddProduct() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 80 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {' '}
+      <ScrollView style={styles.container}>
         <Text style={styles.title}>Add Product</Text>
-        {/* NAME */}
+
         <TextInput
           placeholder="Product name"
-          style={[styles.input, errors.name && styles.inputError]}
+          style={styles.input}
           value={name}
           onChangeText={setName}
         />
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-        {/* DESCRIPTION */}
+
         <TextInput
           placeholder="Description"
           style={styles.input}
           value={description}
           onChangeText={setDescription}
         />
-        {/* PRICE */}
+
         <TextInput
           placeholder="Price"
-          style={[styles.input, errors.price && styles.inputError]}
+          style={styles.input}
           keyboardType="numeric"
           value={price}
           onChangeText={(v) => numberOnly(v, setPrice)}
         />
-        {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
-        {/* STOCK */}
+
         <TextInput
           placeholder="Stock"
           style={styles.input}
@@ -161,7 +193,7 @@ export default function AddProduct() {
           value={stock}
           onChangeText={(v) => numberOnly(v, setStock)}
         />
-        {/* DISCOUNT */}
+
         <TextInput
           placeholder="Discount %"
           style={styles.input}
@@ -169,17 +201,14 @@ export default function AddProduct() {
           value={discount}
           onChangeText={(v) => numberOnly(v, setDiscount)}
         />
-        {/* CATEGORY */}
+
         <Text style={styles.section}>Category</Text>
+
         <View style={styles.tagContainer}>
           {categories.map((c) => (
             <TouchableOpacity
               key={c}
-              style={[
-                styles.tag,
-                category === c && styles.tagSelected,
-                errors.category && styles.tagError,
-              ]}
+              style={[styles.tag, category === c && styles.tagSelected]}
               onPress={() => setCategory(c)}
             >
               <Text
@@ -193,11 +222,9 @@ export default function AddProduct() {
             </TouchableOpacity>
           ))}
         </View>
-        {errors.category && (
-          <Text style={styles.errorText}>{errors.category}</Text>
-        )}
-        {/* TAGS */}
+
         <Text style={styles.section}>Tags</Text>
+
         <View style={styles.tagContainer}>
           {tagOptions.map((t) => (
             <TouchableOpacity
@@ -216,19 +243,42 @@ export default function AddProduct() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text style={styles.section}>Images (1-5)</Text>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {images.map((img, i) => (
+            <TouchableOpacity key={i} onPress={() => removeImage(i)}>
+              <Image
+                source={{ uri: img }}
+                style={{ width: 80, height: 80, borderRadius: 10 }}
+              />
+            </TouchableOpacity>
+          ))}
+
+          {images.length < 5 && (
+            <TouchableOpacity style={styles.addImg} onPress={pickImage}>
+              <Text>+ Add</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Create Product</Text>
         </TouchableOpacity>
+
         <Text style={{ marginTop: 30, fontSize: 20, fontWeight: 'bold' }}>
-          ลองคำนวณราคาขายในสกุลอื่นๆ 🌍
+          Currency Preview
         </Text>
+
         <TextInput
           placeholder="THB price"
           keyboardType="numeric"
           style={styles.input}
           value={thb}
           onChangeText={(v) => numberOnly(v, setThb)}
-        />{' '}
+        />
+
         <CurrencyCard label="USD" value={`$ ${usd}`} />
         <CurrencyCard label="EUR" value={`€ ${eur}`} />
         <CurrencyCard label="JPY" value={`¥ ${jpy}`} />
@@ -238,44 +288,13 @@ export default function AddProduct() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 30,
-    backgroundColor: '#f4f6f9',
-  },
-
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  error: {
-    fontSize: 20,
-    color: 'red',
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
+  container: { flex: 1, padding: 30, backgroundColor: '#f4f6f9' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
 
   input: {
     backgroundColor: 'white',
     padding: 14,
     borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-
-  inputError: {
-    borderColor: 'red',
-  },
-
-  errorText: {
-    color: 'red',
     marginBottom: 10,
   },
 
@@ -289,7 +308,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 20,
   },
 
   tag: {
@@ -301,11 +319,6 @@ const styles = StyleSheet.create({
 
   tagSelected: {
     backgroundColor: '#ff8c42',
-  },
-
-  tagError: {
-    borderWidth: 1,
-    borderColor: 'red',
   },
 
   tagText: {
@@ -321,11 +334,31 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop: 20,
   },
 
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16,
+  },
+
+  addImg: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  error: {
+    fontSize: 20,
+    color: 'red',
   },
 });
