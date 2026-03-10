@@ -25,7 +25,6 @@ export default function ProductsScreen() {
   const favorites = useFavoriteStore((state) => state.favorites);
 
   const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,27 +57,40 @@ export default function ProductsScreen() {
     fetchProducts();
   }, [fetchProducts]);
 
-  /* ---------------- DEBOUNCE SEARCH ---------------- */
+  /* ---------------- DEBOUNCED SEARCH ---------------- */
 
-  useEffect(() => {
-    const delay = setTimeout(async () => {
+  const debouncedSearch = useCallback(
+    async (query: string) => {
+      if (!query) {
+        fetchProducts();
+        return;
+      }
+
       try {
         setLoading(true);
 
-        const res = await fetch(`${API_URL}/search?q=${searchInput}`);
+        const res = await fetch(`${API_URL}/search?q=${query}`);
 
         const data = await res.json();
 
-        setProducts(data.data); // เพราะ backend ส่ง {data:[], metadata:{}}
+        setProducts(data.data);
       } catch (err) {
         console.log(err);
       } finally {
         setLoading(false);
       }
+    },
+    [fetchProducts],
+  );
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      debouncedSearch(searchInput);
     }, 500);
 
     return () => clearTimeout(delay);
-  }, [searchInput]);
+  }, [searchInput, debouncedSearch]);
+
   /* ---------------- TAG FILTER ---------------- */
 
   const toggleTag = (tag: string) => {
@@ -90,14 +102,12 @@ export default function ProductsScreen() {
   /* ---------------- FILTER PRODUCTS ---------------- */
 
   const filteredProducts = products.filter((p) => {
-    const nameMatch = p.name.toLowerCase().includes(search.toLowerCase());
-
     const tagMatch =
       selectedTags.length === 0 ||
       (Array.isArray(p.tags) &&
         p.tags.some((tag) => selectedTags.includes(tag)));
 
-    return nameMatch && tagMatch;
+    return tagMatch;
   });
 
   /* ---------------- PRODUCT CARD ---------------- */
@@ -135,7 +145,7 @@ export default function ProductsScreen() {
     );
   };
 
-  /* ---------------- LOADING SKELETON ---------------- */
+  /* ---------------- LOADING ---------------- */
 
   if (loading) {
     return (
@@ -146,7 +156,7 @@ export default function ProductsScreen() {
     );
   }
 
-  /* ---------------- ERROR STATE ---------------- */
+  /* ---------------- ERROR ---------------- */
 
   if (error) {
     return (
@@ -202,7 +212,7 @@ export default function ProductsScreen() {
           ))}
         </View>
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
 
         {filteredProducts.length === 0 ? (
           <Text style={styles.noResult}>
