@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import { useFavoriteStore } from '../../store/useFavoriteStore';
@@ -34,9 +34,14 @@ export default function ProductDetail() {
 
   useEffect(() => {
     fetch(API_URL)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('not-found');
+        }
+        return res.json();
+      })
       .then((data) => setProduct(data))
-      .catch((err) => console.log(err))
+      .catch(() => setProduct(null))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -49,10 +54,11 @@ export default function ProductDetail() {
     );
   }
 
+  // ✅ C4 NotFound Handling
   if (!product) {
     return (
       <View style={styles.center}>
-        <Text>Product not found</Text>
+        <Text style={{ fontSize: 20 }}>Product not found</Text>
       </View>
     );
   }
@@ -90,6 +96,11 @@ export default function ProductDetail() {
 
   return (
     <View style={styles.container}>
+      {/* ✅ C3 Back Button */}
+      <TouchableOpacity onPress={() => router.back()}>
+        <Text style={styles.back}>← Back</Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.name}>{product.name}</Text>
 
@@ -145,6 +156,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
 
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  back: { fontSize: 16, marginBottom: 10, color: '#ff8c42' },
+
+  backBtn: {
+    marginTop: 20,
+    backgroundColor: '#ff8c42',
+    padding: 10,
+    borderRadius: 10,
+  },
 
   header: {
     flexDirection: 'row',
