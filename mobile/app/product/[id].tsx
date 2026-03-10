@@ -103,10 +103,14 @@ export default function ProductDetail() {
 
       <View style={styles.header}>
         <Text style={styles.name}>{product.name}</Text>
-
-        <TouchableOpacity onPress={() => toggleFavorite(product._id)}>
+        <TouchableOpacity
+          onPress={() => {
+            toggleFavorite(product._id);
+            router.back();
+          }}
+        >
           <Text style={styles.fav}>{isFav ? '❤️' : '🤍'}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>{' '}
       </View>
 
       {product.description && (
