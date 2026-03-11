@@ -7,16 +7,24 @@ import {
   TextInput,
   SafeAreaView,
   ActivityIndicator,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
+
+const screenWidth = Dimensions.get('window').width;
+
+/* padding container = 20 ซ้าย + 20 ขวา */
+const CARD_WIDTH = (screenWidth - 60) / 2;
 
 type Product = {
   _id: string;
   name: string;
   originalPrice: number;
   tags?: string[];
+  images?: string[];
 };
 
 export default function ProductsScreen() {
@@ -44,7 +52,6 @@ export default function ProductsScreen() {
       if (!res.ok) throw new Error('fetch error');
 
       const data = await res.json();
-
       setProducts(data);
     } catch (err) {
       setError(true);
@@ -57,7 +64,7 @@ export default function ProductsScreen() {
     fetchProducts();
   }, [fetchProducts]);
 
-  /* ---------------- DEBOUNCED SEARCH ---------------- */
+  /* ---------------- SEARCH ---------------- */
 
   const debouncedSearch = useCallback(
     async (query: string) => {
@@ -70,7 +77,6 @@ export default function ProductsScreen() {
         setLoading(true);
 
         const res = await fetch(`${API_URL}/search?q=${query}`);
-
         const data = await res.json();
 
         setProducts(data.data);
@@ -125,22 +131,28 @@ export default function ProductsScreen() {
           })
         }
       >
-        <View style={styles.cardTop}>
-          <Text style={styles.name}>{item.name}</Text>
-          {isFav && <Text style={styles.fav}>❤️</Text>}
-        </View>
-
-        {item.tags && (
-          <View style={styles.tagsContainer}>
-            {item.tags.map((tag) => (
-              <Text key={tag} style={styles.tag}>
-                {tag}
-              </Text>
-            ))}
-          </View>
+        {item.images && item.images.length > 0 && (
+          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
         )}
 
-        <Text style={styles.price}>฿{item.originalPrice}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.cardTop}>
+            <Text style={styles.name}>{item.name}</Text>
+            {isFav && <Text style={styles.fav}>❤️</Text>}
+          </View>
+
+          {item.tags && (
+            <View style={styles.tagsContainer}>
+              {item.tags.map((tag) => (
+                <Text key={tag} style={styles.tag}>
+                  {tag}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          <Text style={styles.price}>฿{item.originalPrice}</Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -179,16 +191,12 @@ export default function ProductsScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>🐱 Cat Products</Text>
 
-        {/* SEARCH */}
-
         <TextInput
           placeholder="Search products..."
           style={styles.search}
           value={searchInput}
           onChangeText={setSearchInput}
         />
-
-        {/* TAG FILTER */}
 
         <View style={styles.tagFilter}>
           {allTags.map((tag) => (
@@ -212,8 +220,6 @@ export default function ProductsScreen() {
           ))}
         </View>
 
-        {/* EMPTY */}
-
         {filteredProducts.length === 0 ? (
           <Text style={styles.noResult}>
             No products found for "{searchInput}"
@@ -225,6 +231,8 @@ export default function ProductsScreen() {
             renderItem={renderItem}
             numColumns={2}
             columnWrapperStyle={{ justifyContent: 'space-between' }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
           />
         )}
       </View>
@@ -235,9 +243,16 @@ export default function ProductsScreen() {
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#111' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#111',
+  },
 
-  container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f6f6f6',
+  },
 
   title: {
     fontSize: 26,
@@ -265,19 +280,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
 
-  activeTag: { backgroundColor: '#ff8c42' },
+  activeTag: {
+    backgroundColor: '#ff8c42',
+  },
 
-  filterTagText: { color: '#333' },
+  filterTagText: {
+    color: '#333',
+  },
 
-  activeTagText: { color: 'white', fontWeight: 'bold' },
+  activeTagText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 
   card: {
+    width: CARD_WIDTH,
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 16,
-    width: '48%',
-    marginBottom: 16,
+    marginBottom: 18,
+    overflow: 'hidden',
     elevation: 3,
+  },
+
+  productImage: {
+    width: '100%',
+    height: 160,
+    resizeMode: 'cover',
+  },
+
+  cardContent: {
+    padding: 10,
   },
 
   cardTop: {
@@ -285,15 +317,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  name: { fontSize: 15, fontWeight: 'bold', flex: 1 },
+  name: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    flex: 1,
+  },
 
-  fav: { fontSize: 18 },
+  fav: {
+    fontSize: 16,
+  },
 
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 5,
-    marginTop: 6,
+    gap: 4,
+    marginTop: 4,
   },
 
   tag: {
@@ -301,11 +339,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    fontSize: 11,
+    fontSize: 10,
   },
 
   price: {
-    marginTop: 10,
+    marginTop: 6,
     fontWeight: 'bold',
     color: '#ff8c42',
     fontSize: 16,
