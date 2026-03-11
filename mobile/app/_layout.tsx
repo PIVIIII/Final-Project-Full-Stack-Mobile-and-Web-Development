@@ -4,21 +4,21 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 
 function Header() {
-  const { user, logout } = useAuth();
-  console.log('user?.role', user?.role);
+  const { userId, email, role, login, logout } = useAuth();
+  console.log('user?.role', role);
 
   return (
     <View style={styles.headerBar}>
       {/* LEFT */}
       <View style={styles.headerLeft}>
         <Text style={styles.headerTitle}>
-          MeowMarket {user?.role === 'seller' ? '(seller)' : ''}
+          MeowMarket {role === 'seller' ? '(seller)' : ''}
         </Text>{' '}
       </View>
 
       {/* CENTER */}
       <View style={styles.headerCenter}>
-        {user?.role === 'seller' || user?.role === 'admin' ? (
+        {role === 'seller' || role === 'admin' ? (
           <Link href="/add-product" asChild>
             <TouchableOpacity>
               <Text style={styles.menuText}>ADD</Text>
@@ -46,9 +46,9 @@ function Header() {
 
       {/* RIGHT */}
       <View style={styles.headerRight}>
-        {user ? (
+        {userId ? (
           <>
-            <Text style={styles.headerAuth}>{user.email}</Text>
+            <Text style={styles.headerAuth}>{email}</Text>
 
             <TouchableOpacity onPress={() => logout()}>
               <Text style={styles.headerAuth}>Logout</Text>

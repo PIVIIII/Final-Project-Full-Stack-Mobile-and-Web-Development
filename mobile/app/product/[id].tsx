@@ -118,7 +118,7 @@ export default function ProductDetail() {
           onPress={() =>
             addToCart(
               {
-                id: product._id,
+                _id: product._id,
                 name: product.name,
                 price: salePrice,
                 stock: product.stock,

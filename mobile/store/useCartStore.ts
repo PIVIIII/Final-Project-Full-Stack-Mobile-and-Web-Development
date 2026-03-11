@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 type CartItem = {
-  id: string;
+  _id: string;
   name: string;
   price: number;
   stock: number;
@@ -23,12 +23,12 @@ export const useCartStore = create<CartState>((set) => ({
 
   addToCart: (product, qty) =>
     set((state) => {
-      const exist = state.cart.find((i) => i.id === product.id);
+      const exist = state.cart.find((i) => i._id === product._id);
 
       if (exist) {
         return {
           cart: state.cart.map((i) =>
-            i.id === product.id
+            i._id === product._id
               ? { ...i, qty: Math.min(i.qty + qty, i.stock) }
               : i,
           ),
@@ -43,20 +43,20 @@ export const useCartStore = create<CartState>((set) => ({
   increase: (id) =>
     set((state) => ({
       cart: state.cart.map((i) =>
-        i.id === id && i.qty < i.stock ? { ...i, qty: i.qty + 1 } : i,
+        i._id === id && i.qty < i.stock ? { ...i, qty: i.qty + 1 } : i,
       ),
     })),
 
   decrease: (id) =>
     set((state) => ({
       cart: state.cart.map((i) =>
-        i.id === id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i,
+        i._id === id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i,
       ),
     })),
 
   remove: (id) =>
     set((state) => ({
-      cart: state.cart.filter((i) => i.id !== id),
+      cart: state.cart.filter((i) => i._id !== id),
     })),
 
   clearCart: () => set({ cart: [] }),

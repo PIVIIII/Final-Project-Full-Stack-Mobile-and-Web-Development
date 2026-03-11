@@ -10,8 +10,11 @@ import {
 import { router } from 'expo-router';
 import { useCartStore } from '../store/useCartStore';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function CartScreen() {
+  const { userId } = useAuth();
+
   const cart = useCartStore((state) => state.cart);
   const increase = useCartStore((state) => state.increase);
   const decrease = useCartStore((state) => state.decrease);
@@ -22,22 +25,15 @@ export default function CartScreen() {
   const slideAnim = useState(new Animated.Value(0))[0];
 
   const toggleDrawer = () => {
-    if (drawerOpen) {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 260,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }
+    Animated.timing(slideAnim, {
+      toValue: drawerOpen ? 0 : 260,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
 
     setDrawerOpen(!drawerOpen);
   };
+
   // Calculation
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const vatRate = 0.07;
@@ -47,23 +43,40 @@ export default function CartScreen() {
 
   // Checkout
   const handleCheckout = async () => {
+    if (!userId) {
+      alert('กรุณา login ก่อน');
+      router.push('/login');
+      return;
+    }
+
     try {
       for (const item of cart) {
-        await fetch(`http://localhost:5000/api/products/${item.id}`, {
-          method: 'PUT',
+        const res = await fetch('http://localhost:5000/api/orders', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            stock: item.stock - item.qty,
+            user_id: userId,
+            product_id: item._id,
+            quantity: item.qty,
           }),
         });
+
+        const data = await res.json();
+        console.log('order response', data);
+
+        if (!res.ok) {
+          alert(JSON.stringify(data));
+          return;
+        }
       }
 
       clearCart();
       router.push('/payment-success');
     } catch (err) {
       console.log(err);
+      alert('Checkout failed');
     }
   };
 
@@ -84,7 +97,7 @@ export default function CartScreen() {
         <View style={styles.qtyRow}>
           <TouchableOpacity
             style={[styles.qtyBtn, item.qty === 1 && styles.disabled]}
-            onPress={() => decrease(item.id)}
+            onPress={() => decrease(item._id)}
           >
             <Text style={styles.qtyText}>-</Text>
           </TouchableOpacity>
@@ -93,13 +106,13 @@ export default function CartScreen() {
 
           <TouchableOpacity
             style={[styles.qtyBtn, item.qty >= item.stock && styles.disabled]}
-            onPress={() => increase(item.id)}
+            onPress={() => increase(item._id)}
           >
             <Text style={styles.qtyText}>+</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => remove(item.id)}>
+        <TouchableOpacity onPress={() => remove(item._id)}>
           <Text style={styles.remove}>ลบสินค้า</Text>
         </TouchableOpacity>
       </View>
@@ -118,19 +131,17 @@ export default function CartScreen() {
         <>
           <FlatList
             data={cart}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             renderItem={renderItem}
             contentContainerStyle={{ paddingBottom: 200 }}
           />
 
-          {/* Summary */}
           <View style={styles.summaryBox}>
             <TouchableOpacity
               style={styles.summaryHeader}
               onPress={toggleDrawer}
             >
               <Text style={styles.summaryTitle}>Summary</Text>
-
               <Text style={styles.arrow}>{drawerOpen ? 'v' : '^'}</Text>
             </TouchableOpacity>
 
@@ -143,23 +154,26 @@ export default function CartScreen() {
                 },
               ]}
             >
-              {' '}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
                 <Text style={styles.summaryValue}>฿{subtotal}</Text>
               </View>
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>VAT (7%)</Text>
                 <Text style={styles.summaryValue}>฿{vat}</Text>
               </View>
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 <Text style={styles.summaryValue}>฿{shipping}</Text>
               </View>
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Total</Text>
                 <Text style={styles.summaryTotal}>฿{total}</Text>
               </View>
+
               <TouchableOpacity style={styles.payBtn} onPress={handleCheckout}>
                 <Text style={styles.payText}>ชำระเงิน</Text>
               </TouchableOpacity>

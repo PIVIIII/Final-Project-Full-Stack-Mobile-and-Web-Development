@@ -14,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const { login } = useAuth();
 
   const handleLogin = async () => {
@@ -23,24 +24,19 @@ export default function Login() {
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
-      console.log('Login response:', data);
 
       if (!res.ok) {
-        setError(data);
+        setError(data.error || 'Login failed');
       } else {
         login(data.user._id, data.user.email, data.user.role);
-        console.log('data', data);
-
         router.replace('/');
       }
-    } catch (err) {
+    } catch {
       setError('Network error');
     }
 
@@ -69,11 +65,7 @@ export default function Login() {
 
       {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>
           {loading ? 'Loading...' : 'Login'}
         </Text>
@@ -81,7 +73,6 @@ export default function Login() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

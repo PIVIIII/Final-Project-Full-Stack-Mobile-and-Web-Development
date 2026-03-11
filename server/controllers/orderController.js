@@ -11,17 +11,14 @@ export const createOrder = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // C1 check stock
     if (product.stock < quantity) {
       return res.status(400).json({
         error: 'Not enough stock',
       });
     }
 
-    // C3 calculate price
-    const totalPrice = product.price * quantity;
+    const totalPrice = product.originalPrice * quantity;
 
-    // C4 atomic update
     const updatedProduct = await Product.findOneAndUpdate(
       {
         _id: product_id,
