@@ -1,8 +1,13 @@
 import express from 'express';
-import { createOrder } from '../controllers/orderController.js';
+import {
+  createOrder,
+  getOrdersByUser,
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
 router.post('/', createOrder);
+
+router.get('/user/:userId', getOrdersByUser);
 
 export default router;

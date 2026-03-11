@@ -50,3 +50,17 @@ export const createOrder = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const getOrdersByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await Order.find({ user_id: userId })
+      .populate('product_id')
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};

@@ -42,6 +42,12 @@ function Header() {
             <Text style={styles.menuText}>PROFILE</Text>
           </TouchableOpacity>
         </Link>
+
+        <Link href="/orders" asChild>
+          <TouchableOpacity>
+            <Text style={styles.menuText}>ORDERS</Text>
+          </TouchableOpacity>
+        </Link>
       </View>
 
       {/* RIGHT */}

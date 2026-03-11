@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-  const { user } = useAuth();
+const { userId, email } = useAuth();
 
   const [profile, setProfile] = useState<any>(null);
   const [borderColor, setBorderColor] = useState('#ff7f50');
@@ -29,11 +29,11 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    console.log('USER:', user);
+    console.log('USER:', userId, email);
 
-    if (!user) return;
+    if (!userId) return;
 
-    fetch(`http://localhost:5000/api/users/${user.id}`)
+    fetch(`http://localhost:5000/api/users/${userId}`)
       .then((res) => res.json())
       .then((data) => {
         console.log('PROFILE:', data);
@@ -42,7 +42,7 @@ export default function Profile() {
       .catch(() => {
         console.log('error loading profile');
       });
-  }, [user]);
+  }, [userId]);
   const handlePress = (text: string) => {
     const newColor = randomColor();
     setBorderColor(newColor);
@@ -69,7 +69,7 @@ export default function Profile() {
           style={[styles.profileImage, { borderColor }]}
         />
 
-        <Text style={styles.username}>{profile.username || user?.email}</Text>
+        <Text style={styles.username}>{profile.username || email}</Text>
 
         <TouchableOpacity
           style={styles.button}
