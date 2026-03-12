@@ -3,152 +3,189 @@ import {
   Text,
   StyleSheet,
   Image,
+  TextInput,
   TouchableOpacity,
-  Alert,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-  const { userId, email } = useAuth();
-
+  const { userId } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [borderColor, setBorderColor] = useState('#ff7f50');
 
-  const randomColor = () => {
-    const colors = [
-      '#ff6b6b',
-      '#6bc5ff',
-      '#ffd93d',
-      '#6bff95',
-      '#c56bff',
-      '#ff9f43',
-    ];
+  const getAvatar = () => {
+    if (!profile) {
+      return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    }
 
-    return colors[Math.floor(Math.random() * colors.length)];
+    if (profile.role === 'buyer')
+      return 'https://cdn-icons-png.flaticon.com/512/616/616430.png';
+
+    if (profile.role === 'seller')
+      return 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
+
+    if (profile.role === 'admin')
+      return 'https://cdn-icons-png.flaticon.com/512/616/616490.png';
+
+    return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
   };
-
   useEffect(() => {
-    console.log('USER:', userId, email);
-
     if (!userId) return;
 
     fetch(`http://localhost:5000/api/users/${userId}`)
       .then((res) => res.json())
-      .then((data) => {
-        console.log('PROFILE:', data);
-        setProfile(data);
-      })
-      .catch(() => {
-        console.log('error loading profile');
-      });
+      .then((data) => setProfile(data))
+      .catch(() => console.log('error loading profile'));
   }, [userId]);
-  const handlePress = (text: string) => {
-    const newColor = randomColor();
-    setBorderColor(newColor);
-    Alert.alert(text);
-  };
 
   if (!profile) {
     return (
-      <View style={styles.container}>
-        <Text>กรุณา Login/Sign up ก่อน</Text>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Image
-          source={{
-            uri:
-              profile.avatar ||
-              'https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg',
-          }}
-          style={[styles.profileImage, { borderColor }]}
-        />
+    <ScrollView style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Image source={{ uri: getAvatar() }} style={styles.avatar} />
 
-        <Text style={styles.username}>{profile.username || email}</Text>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handlePress(profile.link ? profile.link : '-')}
-        >
-          <Text style={styles.buttonText}>
-            🔗 Link: {profile.link ? profile.link : '-'}
+        <View style={styles.headerInfo}>
+          <Text style={styles.name}>{profile.username}</Text>
+          <Text style={styles.email}>
+            {profile.email} - {profile.role}
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handlePress(profile.phone ? profile.phone : '-')}
-        >
-          <Text style={styles.buttonText}>
-            📞 Phone: {profile.phone ? profile.phone : '-'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handlePress(profile.address ? profile.address : '-')}
-        >
-          <Text style={styles.buttonText}>
-            📍 Address: {profile.address ? profile.address : '-'}
-          </Text>
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      {/* ACCOUNT */}
+      <Text style={styles.section}>Account</Text>
+
+      <View style={styles.form}>
+        <View style={styles.field}>
+          <Text style={styles.label}>Username</Text>
+          <TextInput style={styles.input} value={profile.username} />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput style={styles.input} value={profile.email} />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Phone</Text>
+          <TextInput style={styles.input} value={profile.phone || '-'} />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Address</Text>
+          <TextInput style={styles.input} value={profile.address || '-'} />
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.saveBtn}>
+        <Text style={styles.saveText}>Save</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#f4f6f9',
+    flex: 1,
+  },
+
+  center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f2f4f8',
   },
 
-  card: {
+  header: {
+    flexDirection: 'row',
     backgroundColor: 'white',
-    padding: 30,
-    borderRadius: 20,
+    padding: 25,
     alignItems: 'center',
-    width: 320,
-
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
   },
 
-  profileImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 5,
-    marginBottom: 20,
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginRight: 25,
   },
 
-  username: {
-    fontSize: 24,
+  headerInfo: {
+    flex: 1,
+  },
+
+  name: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
   },
 
-  button: {
-    width: '100%',
+  email: {
+    color: '#666',
+    marginTop: 5,
+  },
+
+  uploadBtn: {
+    marginTop: 15,
     backgroundColor: '#4c8bf5',
+    padding: 10,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+
+  uploadText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+
+  section: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    margin: 20,
+  },
+
+  form: {
+    backgroundColor: 'white',
+    padding: 20,
+  },
+
+  field: {
+    marginBottom: 18,
+  },
+
+  label: {
+    color: '#777',
+    marginBottom: 5,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
     padding: 12,
+    backgroundColor: '#fafafa',
+  },
+
+  saveBtn: {
+    backgroundColor: '#1e88e5',
+    margin: 20,
+    padding: 15,
     borderRadius: 10,
-    marginVertical: 6,
     alignItems: 'center',
   },
 
-  buttonText: {
+  saveText: {
     color: 'white',
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '600',
   },
 });

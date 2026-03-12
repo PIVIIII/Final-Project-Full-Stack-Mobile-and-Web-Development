@@ -70,6 +70,7 @@ export const login = async (req, res) => {
 
     const user = await User.findOne({
       email: req.body.email.toLowerCase(),
+      isDeleted: false,
     }).select('+password');
 
     if (!user) {
@@ -210,6 +211,8 @@ export const deleteUser = async (req, res) => {
 
     const currentUser = req.user;
 
+    console.log('DELETE USER:', { currentUser });
+
     if (currentUser.role !== 'admin' && currentUser.id !== userId) {
       return res.status(403).json('You can delete only your account');
     }
@@ -221,6 +224,31 @@ export const deleteUser = async (req, res) => {
 
     res.json({
       message: 'ลบข้อมูลสำเร็จ',
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('+password');
+
+    const valid = await bcrypt.compare(req.body.currentPassword, user.password);
+
+    if (!valid) {
+      return res.status(401).json('Current password incorrect');
+    }
+
+    const newHash = await bcrypt.hash(req.body.newPassword, 12);
+
+    user.password = newHash;
+    user.passwordChangedAt = new Date();
+
+    await user.save();
+
+    res.json({
+      message: 'Password updated successfully',
     });
   } catch (err) {
     res.status(500).json(err);

@@ -22,6 +22,8 @@ const UserSchema = new mongoose.Schema(
       select: false,
     },
 
+    passwordChangedAt: Date,
+
     phone: {
       type: String,
       required: true,
