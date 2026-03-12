@@ -32,7 +32,7 @@ const tagOptions = [
 ];
 
 export default function AddProduct() {
-  const { user } = useAuth();
+  const { userId, role } = useAuth();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -50,7 +50,7 @@ export default function AddProduct() {
   const eur = (thbValue * 0.026).toFixed(2);
   const jpy = (thbValue * 4.1).toFixed(2);
 
-  if (!user || (user.role !== 'admin' && user.role !== 'seller')) {
+  if (!userId || (role !== 'admin' && role !== 'seller')) {
     return (
       <View style={styles.center}>
         <Text style={styles.error}>❌ No permission</Text>
@@ -125,7 +125,7 @@ export default function AddProduct() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          seller_id: user.id,
+          seller_id: userId,
           name,
           description,
           originalPrice: Number(price),
