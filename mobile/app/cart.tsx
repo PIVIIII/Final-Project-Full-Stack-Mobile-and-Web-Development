@@ -44,7 +44,6 @@ export default function CartScreen() {
   // Checkout
   const handleCheckout = async () => {
     if (!userId) {
-      alert('กรุณา login ก่อน');
       router.push('/login');
       return;
     }

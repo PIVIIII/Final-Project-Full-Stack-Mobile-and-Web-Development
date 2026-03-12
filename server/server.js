@@ -6,8 +6,9 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
-import userRoutes from './routes/users.js'; // ⭐ เพิ่มบรรทัดนี้
+import userRoutes from './routes/users.js';
 import orderRoutes from './routes/orderRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 dotenv.config();
 
@@ -24,8 +25,9 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes); // ⭐ เพิ่ม route users
+app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 app.listen(5000, () => {
   console.log('Server running on port 5000');

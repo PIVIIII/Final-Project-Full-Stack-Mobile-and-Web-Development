@@ -15,9 +15,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
 
 const screenWidth = Dimensions.get('window').width;
-
-/* padding container = 20 ซ้าย + 20 ขวา */
-const CARD_WIDTH = (screenWidth - 60) / 2;
+const numColumns = screenWidth < 600 ? 1 : 2;
+const CARD_WIDTH = screenWidth < 600 ? '100%' : screenWidth * 0.44;
 
 type Product = {
   _id: string;
@@ -137,7 +136,9 @@ export default function ProductsScreen() {
 
         <View style={styles.cardContent}>
           <View style={styles.cardTop}>
-            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.name} numberOfLines={2}>
+              {item.name}
+            </Text>{' '}
             {isFav && <Text style={styles.fav}>❤️</Text>}
           </View>
 
@@ -229,10 +230,10 @@ export default function ProductsScreen() {
             data={filteredProducts}
             keyExtractor={(item) => item._id}
             renderItem={renderItem}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            numColumns={numColumns}
+            columnWrapperStyle={
+              numColumns > 1 ? { justifyContent: 'space-between' } : undefined
+            }
           />
         )}
       </View>
@@ -294,17 +295,20 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    width: CARD_WIDTH,
+    width: CARD_WIDTH as any,
+    alignSelf: 'center',
     backgroundColor: 'white',
     borderRadius: 16,
     marginBottom: 18,
     overflow: 'hidden',
     elevation: 3,
+    flexGrow: 1,
+    marginHorizontal: 6,
   },
 
   productImage: {
     width: '100%',
-    height: 160,
+    aspectRatio: 1,
     resizeMode: 'cover',
   },
 
@@ -330,7 +334,6 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
     marginTop: 4,
   },
 
@@ -340,6 +343,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
     fontSize: 10,
+    marginRight: 4,
+    marginBottom: 4,
   },
 
   price: {
