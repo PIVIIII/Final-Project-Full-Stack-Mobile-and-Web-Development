@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-const { userId, email } = useAuth();
+  const { userId, email } = useAuth();
 
   const [profile, setProfile] = useState<any>(null);
   const [borderColor, setBorderColor] = useState('#ff7f50');
@@ -52,7 +52,7 @@ const { userId, email } = useAuth();
   if (!profile) {
     return (
       <View style={styles.container}>
-        <Text>Loading profile...</Text>
+        <Text>กรุณา Login/Sign up ก่อน</Text>
       </View>
     );
   }

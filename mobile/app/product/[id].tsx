@@ -153,6 +153,16 @@ export default function ProductDetail() {
             </Text>
 
             <Text>{r.comment}</Text>
+            {r.sellerReply && (
+              <View style={styles.replyRow}>
+                <Text style={styles.replyArrow}>↳</Text>
+
+                <View style={styles.replyContent}>
+                  <Text style={styles.replyLabel}>Seller</Text>
+                  <Text style={styles.replyText}>{r.sellerReply}</Text>
+                </View>
+              </View>
+            )}
 
             <Text style={styles.reviewDate}>
               {new Date(r.createdAt).toLocaleDateString()}
@@ -346,5 +356,36 @@ const styles = StyleSheet.create({
   cartText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  comment: {
+    marginTop: 4,
+    fontSize: 15,
+  },
+
+  replyRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+    marginLeft: 6,
+  },
+
+  replyArrow: {
+    fontSize: 18,
+    marginRight: 6,
+    color: '#ff8c42',
+  },
+
+  replyContent: {
+    flex: 1,
+  },
+
+  replyLabel: {
+    fontWeight: 'bold',
+    color: '#ff8c42',
+    fontSize: 14,
+  },
+
+  replyText: {
+    color: '#333',
+    fontSize: 14,
   },
 });

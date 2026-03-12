@@ -1,81 +1,153 @@
-import { Stack, Link, router } from 'expo-router';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Stack, Link } from 'expo-router';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from 'react-native';
+import { useState, useRef } from 'react';
+
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 
 function Header() {
-  const { userId, email, role, login, logout } = useAuth();
-  console.log('user?.role', role);
+  const { userId, email, role, logout } = useAuth();
+
+  const [open, setOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleMenu = () => {
+    if (open) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => setOpen(false));
+    } else {
+      setOpen(true);
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => setOpen(false));
+  };
+
+  const slide = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 0],
+  });
 
   return (
-    <View style={styles.headerBar}>
-      {/* LEFT */}
-      <View style={styles.headerLeft}>
-        <Text style={styles.headerTitle}>
-          MeowMarket {role === 'seller' ? '(seller)' : ''}
-        </Text>{' '}
+    <View style={styles.headerWrapper}>
+      {/* HEADER BAR */}
+
+      <View style={styles.headerBar}>
+        <View style={styles.leftSection}>
+          <TouchableOpacity onPress={toggleMenu}>
+            <Text style={styles.menuIcon}>☰</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>
+            MeowMarket {role === 'seller' ? '(seller)' : ''}
+          </Text>
+        </View>
+
+        <View style={styles.rightSection}>
+          {userId ? (
+            <>
+              <Text style={styles.headerAuth}>{email}</Text>
+
+              <TouchableOpacity onPress={logout}>
+                <Text style={styles.menuText}>LOGOUT</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Link href="/login" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.menuText}>LOGIN</Text>
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/signup" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.menuText}>SIGN UP</Text>
+                </TouchableOpacity>
+              </Link>
+            </>
+          )}
+        </View>
       </View>
 
-      {/* CENTER */}
-      <View style={styles.headerCenter}>
-        {role === 'seller' || role === 'admin' ? (
-          <Link href="/add-product" asChild>
-            <TouchableOpacity>
-              <Text style={styles.menuText}>ADD</Text>
+      {/* DROPDOWN */}
+
+      {open && (
+        <Animated.View
+          style={[
+            styles.dropdown,
+            {
+              opacity: slideAnim,
+              transform: [{ translateY: slide }],
+            },
+          ]}
+        >
+          <Link href="/products" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>PRODUCT</Text>
             </TouchableOpacity>
           </Link>
-        ) : null}
-        <Link href="/products" asChild>
-          <TouchableOpacity>
-            <Text style={styles.menuText}>PRODUCT</Text>
-          </TouchableOpacity>
-        </Link>
 
-        <Link href="/cart" asChild>
-          <TouchableOpacity>
-            <Text style={styles.menuText}>CART</Text>
-          </TouchableOpacity>
-        </Link>
-
-        <Link href="/profile" asChild>
-          <TouchableOpacity>
-            <Text style={styles.menuText}>PROFILE</Text>
-          </TouchableOpacity>
-        </Link>
-
-        <Link href="/orders" asChild>
-          <TouchableOpacity>
-            <Text style={styles.menuText}>ORDERS</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
-
-      {/* RIGHT */}
-      <View style={styles.headerRight}>
-        {userId ? (
-          <>
-            <Text style={styles.headerAuth}>{email}</Text>
-
-            <TouchableOpacity onPress={() => logout()}>
-              <Text style={styles.headerAuth}>Logout</Text>
+          <Link href="/cart" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>CART</Text>
             </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Link href="/login" asChild>
-              <TouchableOpacity style={styles.loginButton}>
-                <Text style={styles.loginText}>Log in</Text>
-              </TouchableOpacity>
-            </Link>
+          </Link>
 
-            <Link href="/signup" asChild>
-              <TouchableOpacity style={styles.signupButton}>
-                <Text style={styles.signupText}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
-          </>
-        )}
-      </View>
+          <Link href="/profile" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>PROFILE</Text>
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/orders" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>ORDERS</Text>
+            </TouchableOpacity>
+          </Link>
+
+          {role === 'seller' && (
+            <>
+              <Link href="/seller-orders" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>SELLER ORDERS</Text>
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/seller-reviews" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>REPLIES</Text>
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/add-product" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>ADD PRODUCT</Text>
+                </TouchableOpacity>
+              </Link>
+            </>
+          )}
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -100,76 +172,60 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  headerWrapper: {
+    backgroundColor: '#222',
+  },
+
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#222',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+
+  menuIcon: {
+    fontSize: 26,
+    color: 'white',
   },
 
   headerTitle: {
     color: '#ff8c42',
     fontWeight: 'bold',
-    fontSize: 22,
-  },
-
-  cartIcon: {
-    width: 28,
-    height: 28,
+    fontSize: 20,
   },
 
   headerAuth: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  signupButton: {
-    backgroundColor: 'white',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  signupText: {
-    color: 'black',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: 'white',
+    fontSize: 14,
   },
 
-  loginButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+  dropdown: {
+    backgroundColor: '#333',
+    paddingVertical: 10,
   },
 
-  loginText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  menuItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
   },
 
   menuText: {
     color: 'white',
-    fontWeight: 'bold',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-
-  headerLeft: {
-    flex: 1,
-  },
-
-  headerCenter: {
-    flex: 2,
+  leftSection: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 30,
-  },
-
-  headerRight: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: 12,
+  },
+
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
 });

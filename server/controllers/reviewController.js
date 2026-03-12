@@ -92,3 +92,24 @@ export const getUserReview = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const getReviewsBySeller = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    const reviews = await Review.find()
+      .populate({
+        path: 'product_id',
+        match: { seller_id: sellerId },
+        select: 'name images',
+      })
+      .populate('user_id', 'username')
+      .sort({ createdAt: -1 });
+
+    const filteredReviews = reviews.filter((r) => r.product_id !== null);
+
+    res.json(filteredReviews);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
