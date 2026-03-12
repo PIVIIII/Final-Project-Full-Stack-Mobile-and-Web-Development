@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-  const { userId } = useAuth();
+  const { userId, role } = useAuth();
   const [profile, setProfile] = useState<any>(null);
 
   const getAvatar = () => {
@@ -62,6 +62,17 @@ export default function Profile() {
         </View>
       </View>
 
+      {/* ADMIN DASHBOARD */}
+      {/* {role === 'admin' && (
+        <TouchableOpacity
+          style={styles.adminBtn}
+          onPress={() => router.push('/admin-dashboard')}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>
+            Admin Dashboard
+          </Text>
+        </TouchableOpacity>
+      )} */}
       {/* ACCOUNT */}
       <Text style={styles.section}>Account</Text>
 
@@ -187,5 +198,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  adminBtn: {
+    backgroundColor: '#e53935',
+    padding: 15,
+    borderRadius: 10,
+    margin: 20,
+    alignItems: 'center',
   },
 });

@@ -8,12 +8,14 @@ import {
   getProductStats,
 } from '../controllers/productController.js';
 
+import { verifyToken } from '../middleware/verifyToken.js';
+import { restrictTo } from '../middleware/restrictTo.js';
+
 const router = express.Router();
 
-router.post('/', createProduct);
+router.post('/', verifyToken, restrictTo('seller', 'admin'), createProduct);
 
-// ✅ stats ต้องอยู่ก่อน :id
-router.get('/stats', getProductStats);
+router.get('/stats', verifyToken, restrictTo('admin'), getProductStats);
 
 router.get('/', getProducts);
 
@@ -21,6 +23,6 @@ router.get('/search', searchProducts);
 
 router.get('/:id', getProduct);
 
-router.put('/:id', updateProduct);
+router.put('/:id', verifyToken, restrictTo('seller', 'admin'), updateProduct);
 
 export default router;

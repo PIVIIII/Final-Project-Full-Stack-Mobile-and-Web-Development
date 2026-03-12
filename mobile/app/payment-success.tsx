@@ -8,13 +8,13 @@ export default function PaymentSuccess() {
 
       <Text style={styles.title}>ชำระเงินสำเร็จ</Text>
 
-      <Text style={styles.subtitle}>ร้านค้ากำลังเตรียมจัดส่งสินค้า</Text>
+      {/* <Text style={styles.subtitle}>สามารถไปรับของตามที่อยู่ด้านล่าง</Text> */}
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.replace('/')}
+        onPress={() => router.replace('/orders')}
       >
-        <Text style={styles.buttonText}>กลับหน้าหลัก</Text>
+        <Text style={styles.buttonText}>MY ORDER</Text>
       </TouchableOpacity>
     </View>
   );
