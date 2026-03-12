@@ -64,3 +64,24 @@ export const getOrdersByUser = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const getOrdersBySeller = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    const orders = await Order.find()
+      .populate({
+        path: 'product_id',
+        match: { seller_id: sellerId },
+        select: 'name images seller_id',
+      })
+      .populate('user_id', 'username email')
+      .sort({ createdAt: -1 });
+
+    const filteredOrders = orders.filter((o) => o.product_id !== null);
+
+    res.json(filteredOrders);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};

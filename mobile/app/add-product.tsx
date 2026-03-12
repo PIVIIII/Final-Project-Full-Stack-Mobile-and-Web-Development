@@ -32,7 +32,7 @@ const tagOptions = [
 ];
 
 export default function AddProduct() {
-  const { user } = useAuth();
+  const { userId, role } = useAuth();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -46,11 +46,11 @@ export default function AddProduct() {
   const [thb, setThb] = useState('');
 
   const thbValue = parseFloat(thb) || 0;
-  const usd = (thbValue * 0.028).toFixed(2);
-  const eur = (thbValue * 0.026).toFixed(2);
-  const jpy = (thbValue * 4.1).toFixed(2);
+  const discount1 = (thbValue * 0.95).toFixed(2);
+  const discount2 = (thbValue * 0.9).toFixed(2);
+  const discount3 = (thbValue * 0.8).toFixed(2);
 
-  if (!user || (user.role !== 'admin' && user.role !== 'seller')) {
+  if (!userId || (role !== 'admin' && role !== 'seller')) {
     return (
       <View style={styles.center}>
         <Text style={styles.error}>❌ No permission</Text>
@@ -125,7 +125,7 @@ export default function AddProduct() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          seller_id: user.id,
+          seller_id: userId,
           name,
           description,
           originalPrice: Number(price),
@@ -268,7 +268,7 @@ export default function AddProduct() {
         </TouchableOpacity>
 
         <Text style={{ marginTop: 30, fontSize: 20, fontWeight: 'bold' }}>
-          Currency Preview
+          คำนวณราคาลด จาก discount %
         </Text>
 
         <TextInput
@@ -279,9 +279,9 @@ export default function AddProduct() {
           onChangeText={(v) => numberOnly(v, setThb)}
         />
 
-        <CurrencyCard label="USD" value={`$ ${usd}`} />
-        <CurrencyCard label="EUR" value={`€ ${eur}`} />
-        <CurrencyCard label="JPY" value={`¥ ${jpy}`} />
+        <CurrencyCard label="ลด 5%" value={`${discount1}`} />
+        <CurrencyCard label="ลด 10%" value={`${discount2}`} />
+        <CurrencyCard label="ลด 20%" value={`${discount3}`} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
