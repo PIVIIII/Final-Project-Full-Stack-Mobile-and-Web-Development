@@ -101,32 +101,20 @@ function Header() {
             },
           ]}
         >
-          <Link href="/products" asChild>
-            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
-              <Text style={styles.menuText}>PRODUCT</Text>
-            </TouchableOpacity>
-          </Link>
-
-          <Link href="/cart" asChild>
-            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
-              <Text style={styles.menuText}>CART</Text>
-            </TouchableOpacity>
-          </Link>
-
           <Link href="/profile" asChild>
             <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
               <Text style={styles.menuText}>PROFILE</Text>
             </TouchableOpacity>
           </Link>
 
-          <Link href="/orders" asChild>
-            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
-              <Text style={styles.menuText}>ORDERS</Text>
-            </TouchableOpacity>
-          </Link>
-
           {role === 'seller' && (
             <>
+              <Link href="/add-product" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>ADD PRODUCT</Text>
+                </TouchableOpacity>
+              </Link>
+
               <Link href="/seller-orders" asChild>
                 <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
                   <Text style={styles.menuText}>SELLER ORDERS</Text>
@@ -138,14 +126,25 @@ function Header() {
                   <Text style={styles.menuText}>REPLIES</Text>
                 </TouchableOpacity>
               </Link>
-
-              <Link href="/add-product" asChild>
-                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
-                  <Text style={styles.menuText}>ADD PRODUCT</Text>
-                </TouchableOpacity>
-              </Link>
             </>
           )}
+
+          <Link href="/products" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>PRODUCT</Text>
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/cart" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>CART</Text>
+            </TouchableOpacity>
+          </Link>
+          <Link href="/orders" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>MY ORDERS</Text>
+            </TouchableOpacity>
+          </Link>
         </Animated.View>
       )}
     </View>

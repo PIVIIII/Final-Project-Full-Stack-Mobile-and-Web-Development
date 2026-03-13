@@ -10,7 +10,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 import CurrencyCard from '../components/ui/CurrencyCard';
@@ -32,6 +32,16 @@ const tagOptions = [
   'grooming',
 ];
 
+const MAX_RUNNING = 2;
+
+type UploadImage = {
+  id: number;
+  uri: string;
+  base64?: string;
+  status: 'pending' | 'running' | 'completed';
+  progress: number;
+};
+
 export default function AddProduct() {
   const { userId, role } = useAuth();
 
@@ -42,7 +52,7 @@ export default function AddProduct() {
   const [discount, setDiscount] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<UploadImage[]>([]);
   const [errors, setErrors] = useState<any>({});
   const [thb, setThb] = useState('');
 
@@ -60,11 +70,9 @@ export default function AddProduct() {
   }
 
   const toggleTag = (tag: string) => {
-    if (tags.includes(tag)) {
-      setTags(tags.filter((t) => t !== tag));
-    } else {
-      setTags([...tags, tag]);
-    }
+    setTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
   };
 
   const validate = () => {
@@ -78,7 +86,6 @@ export default function AddProduct() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // convert image -> base64
   const convertToBase64 = async (uri: string) => {
     const response = await fetch(uri);
     const blob = await response.blob();
@@ -102,19 +109,87 @@ export default function AddProduct() {
     });
 
     if (!result.canceled) {
-      const base64 = await convertToBase64(result.assets[0].uri);
-      setImages([...images, base64]);
+      const newImg: UploadImage = {
+        id: Date.now(),
+        uri: result.assets[0].uri,
+        status: 'pending',
+        progress: 0,
+      };
+
+      setImages((prev) => [...prev, newImg]);
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+  const removeImage = (id: number) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
   };
+
+  const uploadImage = async (img: UploadImage) => {
+    const base64 = await convertToBase64(img.uri);
+
+    let progress = 0;
+
+    const interval = setInterval(() => {
+      progress += Math.random() * 20;
+
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+
+        setImages((prev) =>
+          prev.map((i) =>
+            i.id === img.id
+              ? { ...i, base64, status: 'completed', progress: 100 }
+              : i,
+          ),
+        );
+      } else {
+        setImages((prev) =>
+          prev.map((i) => (i.id === img.id ? { ...i, progress } : i)),
+        );
+      }
+    }, 400);
+  };
+
+  const startNextUpload = () => {
+    setImages((prev) => {
+      const running = prev.filter((i) => i.status === 'running').length;
+
+      if (running >= MAX_RUNNING) return prev;
+
+      const nextIndex = prev.findIndex((i) => i.status === 'pending');
+
+      if (nextIndex === -1) {
+        return prev;
+      }
+
+      const updated = [...prev];
+
+      const next = {
+        ...updated[nextIndex],
+        status: 'running' as const,
+      };
+
+      updated[nextIndex] = next;
+
+      uploadImage(next);
+
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    startNextUpload();
+  }, [images]);
 
   const handleSubmit = async () => {
     if (!validate()) return;
 
-    if (images.length < 1) {
+    const completedImages = images
+      .filter((i) => i.status === 'completed')
+      .map((i) => i.base64);
+
+    if (completedImages.length < 1) {
       Alert.alert('Please upload at least 1 image');
       return;
     }
@@ -126,7 +201,7 @@ export default function AddProduct() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // ⭐ ส่ง token
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           seller_id: userId,
@@ -137,7 +212,7 @@ export default function AddProduct() {
           stock: Number(stock) || 0,
           category,
           tags,
-          images,
+          images: completedImages,
         }),
       });
 
@@ -198,66 +273,32 @@ export default function AddProduct() {
           onChangeText={(v) => numberOnly(v, setStock)}
         />
 
-        <TextInput
-          placeholder="Discount %"
-          style={styles.input}
-          keyboardType="numeric"
-          value={discount}
-          onChangeText={(v) => numberOnly(v, setDiscount)}
-        />
-
-        <Text style={styles.section}>Category</Text>
-
-        <View style={styles.tagContainer}>
-          {categories.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[styles.tag, category === c && styles.tagSelected]}
-              onPress={() => setCategory(c)}
-            >
-              <Text
-                style={[
-                  styles.tagText,
-                  category === c && styles.tagTextSelected,
-                ]}
-              >
-                {c}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.section}>Tags</Text>
-
-        <View style={styles.tagContainer}>
-          {tagOptions.map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.tag, tags.includes(t) && styles.tagSelected]}
-              onPress={() => toggleTag(t)}
-            >
-              <Text
-                style={[
-                  styles.tagText,
-                  tags.includes(t) && styles.tagTextSelected,
-                ]}
-              >
-                {t}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.section}>Images (1-5)</Text>
+        <Text style={styles.section}>Images (max 5)</Text>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {images.map((img, i) => (
-            <TouchableOpacity key={i} onPress={() => removeImage(i)}>
-              <Image
-                source={{ uri: img }}
-                style={{ width: 80, height: 80, borderRadius: 10 }}
-              />
-            </TouchableOpacity>
+          {images.map((img) => (
+            <View key={img.id} style={{ alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => removeImage(img.id)}>
+                <Image
+                  source={{ uri: img.uri }}
+                  style={{ width: 80, height: 80, borderRadius: 10 }}
+                />
+              </TouchableOpacity>
+
+              <Text>
+                {img.status === 'pending' && 'waiting'}
+                {img.status === 'running' && 'uploading'}
+                {img.status === 'completed' && 'done'}
+              </Text>
+
+              {img.status === 'running' && (
+                <View style={styles.progressBar}>
+                  <View
+                    style={[styles.progressFill, { width: `${img.progress}%` }]}
+                  />
+                </View>
+              )}
+            </View>
           ))}
 
           {images.length < 5 && (
@@ -308,29 +349,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  progressBar: {
+    width: 80,
+    height: 6,
+    backgroundColor: '#ddd',
+    marginTop: 4,
+    borderRadius: 4,
   },
 
-  tag: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 20,
-  },
-
-  tagSelected: {
+  progressFill: {
+    height: 6,
     backgroundColor: '#ff8c42',
-  },
-
-  tagText: {
-    color: '#333',
-  },
-
-  tagTextSelected: {
-    color: 'white',
+    borderRadius: 4,
   },
 
   button: {
