@@ -3,8 +3,9 @@ import User from '../models/User.js';
 
 export const verifyToken = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
 
+    console.log('token', token);
     if (!token) {
       return res.status(401).json('Not authenticated');
     }
@@ -13,33 +14,14 @@ export const verifyToken = async (req, res, next) => {
 
     const user = await User.findById(decoded.id);
 
-    // C1 Ghost User Test
     if (!user) {
-      return res
-        .status(401)
-        .json('User belonging to this token no longer exist');
+      return res.status(401).json('User not found');
     }
 
-    if (user.isDeleted) {
-      return res.status(401).json('User deleted');
-    }
-
-    // C2 Password change test
-    if (user.passwordChangedAt) {
-      const changedTimestamp = parseInt(
-        user.passwordChangedAt.getTime() / 1000,
-        10,
-      );
-
-      if (decoded.iat < changedTimestamp) {
-        return res.status(401).json('Password recently changed');
-      }
-    }
-
-    req.user = user; // C4 inject user
+    req.user = user;
 
     next();
   } catch (err) {
-    return res.status(401).json('Invalid token'); // C5
+    return res.status(401).json('Invalid token');
   }
 };

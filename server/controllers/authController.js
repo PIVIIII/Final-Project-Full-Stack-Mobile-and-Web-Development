@@ -111,13 +111,12 @@ export const login = async (req, res) => {
 
     const { password, ...other } = user._doc;
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: false,
-      maxAge: 86400000,
-    });
-
-    res.json({ user: other });
+    // res.cookie('token', token, {
+    //   httpOnly: true,
+    //   secure: false, // dev mode
+    //   sameSite: 'lax', // หรือ 'none' ถ้าต้องการข้าม origin
+    // });
+    res.json({ user: other, token });
   } catch (err) {
     console.log(err);
     res.status(500).json(err);
