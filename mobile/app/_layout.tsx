@@ -10,9 +10,13 @@ import { useState, useRef } from 'react';
 
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 
 function Header() {
   const { userId, email, role, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // ⭐ ต้องมี
+
+  const isDark = theme === 'dark';
 
   const [open, setOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -48,7 +52,12 @@ function Header() {
   });
 
   return (
-    <View style={styles.headerWrapper}>
+    <View
+      style={[
+        styles.headerWrapper,
+        { backgroundColor: isDark ? '#111' : '#222' },
+      ]}
+    >
       {/* HEADER BAR */}
 
       <View style={styles.headerBar}>
@@ -61,6 +70,11 @@ function Header() {
             MeowMarket {role === 'seller' ? '(seller)' : ''}
           </Text>
         </View>
+
+        {/* THEME BUTTON */}
+        <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 15 }}>
+          <Text style={{ fontSize: 20 }}>{theme === 'dark' ? '☀️' : '🌙'}</Text>
+        </TouchableOpacity>
 
         <View style={styles.rightSection}>
           {userId ? (
@@ -96,6 +110,7 @@ function Header() {
           style={[
             styles.dropdown,
             {
+              backgroundColor: isDark ? '#222' : '#333',
               opacity: slideAnim,
               transform: [{ translateY: slide }],
             },
@@ -140,6 +155,7 @@ function Header() {
               <Text style={styles.menuText}>CART</Text>
             </TouchableOpacity>
           </Link>
+
           <Link href="/orders" asChild>
             <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
               <Text style={styles.menuText}>MY ORDERS</Text>
@@ -162,11 +178,13 @@ function Layout() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Layout />
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Layout />
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -200,7 +218,6 @@ const styles = StyleSheet.create({
   },
 
   dropdown: {
-    backgroundColor: '#333',
     paddingVertical: 10,
   },
 
@@ -216,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',

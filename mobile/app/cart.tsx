@@ -11,9 +11,13 @@ import { router } from 'expo-router';
 import { useCartStore } from '../store/useCartStore';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CartScreen() {
   const { userId } = useAuth();
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const cart = useCartStore((state) => state.cart);
   const increase = useCartStore((state) => state.increase);
@@ -85,7 +89,6 @@ export default function CartScreen() {
         source={{ uri: 'https://placekitten.com/200/200' }}
         style={styles.image}
       />
-
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
 
@@ -119,9 +122,14 @@ export default function CartScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+      ]}
+    >
+      {' '}
       <Text style={styles.title}>🛒 My Cart</Text>
-
       {cart.length === 0 ? (
         <View style={styles.emptyBox}>
           <Text style={styles.emptyText}>ยังไม่มีสินค้าในตะกร้า</Text>

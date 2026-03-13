@@ -8,10 +8,13 @@ import {
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Orders() {
   const { userId } = useAuth();
   const [orders, setOrders] = useState([]);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (!userId) return;
@@ -63,7 +66,12 @@ export default function Orders() {
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+      ]}
+    >
       <Text style={styles.header}>My Orders</Text>
 
       <FlatList

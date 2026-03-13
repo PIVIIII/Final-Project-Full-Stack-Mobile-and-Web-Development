@@ -13,6 +13,7 @@ import {
 import { Stack, router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
+import { useTheme } from '../context/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 const numColumns = screenWidth < 600 ? 1 : 2;
@@ -28,6 +29,9 @@ type Product = {
 
 export default function ProductsScreen() {
   const API_URL = 'http://localhost:5000/api/products';
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const favorites = useFavoriteStore((state) => state.favorites);
 
@@ -186,19 +190,28 @@ export default function ProductsScreen() {
   /* ---------------- MAIN UI ---------------- */
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+      ]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+        ]}
+      >
+        {' '}
         <Text style={styles.title}>🐱 Cat Products</Text>
-
         <TextInput
           placeholder="Search products..."
           style={styles.search}
           value={searchInput}
           onChangeText={setSearchInput}
         />
-
         <View style={styles.tagFilter}>
           {allTags.map((tag) => (
             <TouchableOpacity
@@ -220,7 +233,6 @@ export default function ProductsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
         {filteredProducts.length === 0 ? (
           <Text style={styles.noResult}>
             No products found for "{searchInput}"

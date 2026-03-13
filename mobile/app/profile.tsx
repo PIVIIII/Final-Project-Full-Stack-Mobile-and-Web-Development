@@ -11,11 +11,12 @@ import {
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useTheme } from '../context/ThemeContext';
 export default function Profile() {
   const { userId } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const getAvatar = () => {
     if (!profile) {
       return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
@@ -85,9 +86,19 @@ export default function Profile() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+      ]}
+    >
       {/* HEADER */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
+        ]}
+      >
         <Image source={{ uri: getAvatar() }} style={styles.avatar} />
 
         <View style={styles.headerInfo}>
@@ -177,7 +188,7 @@ const styles = StyleSheet.create({
   },
 
   email: {
-    color: '#666',
+    color: '#ff7300',
     marginTop: 5,
   },
 
