@@ -60,7 +60,7 @@ export const createProduct = async (req, res) => {
 // GET /api/products/search
 export const searchProducts = async (req, res) => {
   try {
-    const { q, keyword, tags, page = 1, limit = 10 } = req.query;
+    const { q, keyword, tags, page = 1, limit = 6 } = req.query;
 
     let filter = {};
 

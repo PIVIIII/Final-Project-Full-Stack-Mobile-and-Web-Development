@@ -41,7 +41,18 @@ export default function ProductsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const allTags = ['food', 'toy', 'litter', 'accessory', 'health'];
+  const allTags = [
+    'dryfood',
+    'wetfood',
+    'snack',
+    'catnip',
+    'toy',
+    'scratcher',
+    'litter',
+    'carrier',
+    'bed',
+    'grooming',
+  ];
 
   /* ---------------- FETCH PRODUCTS ---------------- */
 
@@ -103,23 +114,39 @@ export default function ProductsScreen() {
   /* ---------------- TAG FILTER ---------------- */
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
+    setSelectedTags((prev) => {
+      const newTags = prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : [...prev, tag];
 
+      fetchByTags(newTags);
+
+      return newTags;
+    });
+  };
   /* ---------------- FILTER PRODUCTS ---------------- */
 
-  const filteredProducts = products.filter((p) => {
-    const tagMatch =
-      selectedTags.length === 0 ||
-      (Array.isArray(p.tags) &&
-        p.tags.some((tag) => selectedTags.includes(tag)));
+  const fetchByTags = useCallback(async (tags: string[]) => {
+    try {
+      setLoading(true);
 
-    return tagMatch;
-  });
+      let url = `${API_URL}`;
 
-  /* ---------------- PRODUCT CARD ---------------- */
+      if (tags.length > 0) {
+        const tagQuery = tags.join(',');
+        url = `${API_URL}/search?tags=${tagQuery}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      setProducts(tags.length > 0 ? data.data : data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []); /* ---------------- PRODUCT CARD ---------------- */
 
   const renderItem = ({ item }: { item: Product }) => {
     const isFav = favorites.includes(item._id);
@@ -233,13 +260,13 @@ export default function ProductsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        {filteredProducts.length === 0 ? (
+        {products.length === 0 ? (
           <Text style={styles.noResult}>
             No products found for "{searchInput}"
           </Text>
         ) : (
           <FlatList
-            data={filteredProducts}
+            data={products}
             keyExtractor={(item) => item._id}
             renderItem={renderItem}
             numColumns={numColumns}
