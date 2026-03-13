@@ -4,9 +4,12 @@ type FormData = {
   email: string;
   password: string;
   username: string;
+
   phone: string;
+  linkType: 'additional' | 'other';
   link?: string;
   address: string;
+
   role: 'buyer' | 'seller';
 };
 
@@ -22,6 +25,7 @@ export const useSignupStore = create<Store>((set) => ({
     password: '',
     username: '',
     phone: '',
+    linkType: 'other',
     link: '',
     address: '',
     role: 'buyer',
@@ -39,6 +43,7 @@ export const useSignupStore = create<Store>((set) => ({
         password: '',
         username: '',
         phone: '',
+        linkType: 'other',
         link: '',
         address: '',
         role: 'buyer',

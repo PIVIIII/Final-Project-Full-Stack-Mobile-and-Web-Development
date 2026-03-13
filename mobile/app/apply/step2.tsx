@@ -6,19 +6,28 @@ import {
   StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { useSignupStore } from '../../store/useSignupStore';
 import StepIndicator from '../../components/StepIndicator';
 
 export default function Step2() {
   const { updateFormData, formData } = useSignupStore();
-  const isSeller = formData.role === 'seller';
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      ...formData,
+      linkType: 'yes',
+    },
+  });
+
+  const linkType = useWatch({
+    control,
+    name: 'linkType',
+  });
 
   const onSubmit = (data: any) => {
     updateFormData(data);
@@ -27,125 +36,130 @@ export default function Step2() {
 
   return (
     <View style={styles.bg}>
-      <View style={[styles.card, isSeller && styles.cardSeller]}>
+      <View style={styles.card}>
         <StepIndicator step={2} />
 
-        <Text style={styles.title}>
-          {isSeller ? 'Store Profile' : 'Step 2 : Profile'}
-        </Text>
+        <Text style={styles.title}>Step 2 : Profile</Text>
 
-        <View style={styles.inputGroup}>
+        {/* PHONE */}
+        <Controller
+          control={control}
+          name="phone"
+          rules={{
+            required: 'Phone required',
+            pattern: {
+              value: /^\d{10}$/,
+              message: 'Phone must be 10 digits',
+            },
+          }}
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={[styles.input, errors.phone && styles.inputError]}
+              placeholder="Phone"
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
+        />
+
+        {errors.phone && (
+          <Text style={styles.errorText}>{errors.phone.message as string}</Text>
+        )}
+
+        {/* ADDRESS */}
+        <Controller
+          control={control}
+          name="address"
+          rules={{
+            required: 'Address required',
+            minLength: {
+              value: 20,
+              message: 'Address must be at least 20 characters',
+            },
+          }}
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={[styles.input, errors.address && styles.inputError]}
+              placeholder="Address"
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
+        />
+
+        {errors.address && (
+          <Text style={styles.errorText}>
+            {errors.address.message as string}
+          </Text>
+        )}
+
+        {/* RADIO + LINK */}
+        <View style={styles.radioRow}>
           <Controller
             control={control}
-            name="username"
-            rules={{
-              required: 'Username required',
-              pattern: {
-                value: /^[A-Za-z\s]+$/,
-                message: 'Username must contain only letters',
-              },
-            }}
+            name="linkType"
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[
-                  styles.input,
-                  isSeller && styles.inputSeller,
-                  errors.username && styles.inputError,
-                ]}
-                placeholder="Username"
-                value={value}
-                onChangeText={onChange}
-              />
+              <View style={styles.radioGroup}>
+                <TouchableOpacity
+                  style={styles.radioItem}
+                  onPress={() => onChange('yes')}
+                >
+                  <View style={styles.radioOuter}>
+                    {value === 'yes' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text style={styles.radioText}>
+                    ช่องทางอีเมลติดต่อเพิ่มเติม
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.radioItem}
+                  onPress={() => onChange('no')}
+                >
+                  <View style={styles.radioOuter}>
+                    {value === 'no' && <View style={styles.radioInner} />}
+                  </View>
+                  <Text style={styles.radioText}>อื่น ๆ / ไม่ระบุ </Text>
+                </TouchableOpacity>
+              </View>
             )}
           />
-
-          {errors.username && (
-            <Text style={styles.errorText}>
-              {errors.username.message as string}
-            </Text>
-          )}
-
-          <Controller
-            control={control}
-            name="phone"
-            rules={{
-              required: 'Phone required',
-              pattern: {
-                value: /^\d{10}$/,
-                message: 'Phone must be 10 digits',
-              },
-            }}
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[
-                  styles.input,
-                  isSeller && styles.inputSeller,
-                  errors.phone && styles.inputError,
-                ]}
-                placeholder="Phone"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-
-          {errors.phone && (
-            <Text style={styles.errorText}>
-              {errors.phone.message as string}
-            </Text>
-          )}
 
           <Controller
             control={control}
             name="link"
+            rules={{
+              validate: (value) => {
+                if (linkType === 'yes') {
+                  if (!value) return 'Link is required for this opt@ion';
+                  if (!value.includes('@')) return 'Link must contain @';
+                }
+                return true;
+              },
+            }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[styles.input, isSeller && styles.inputSeller]}
+                style={[styles.linkInput, errors.link && styles.inputError]}
                 placeholder="Link"
                 value={value}
                 onChangeText={onChange}
               />
             )}
           />
-
-          <Controller
-            control={control}
-            name="address"
-            rules={{
-              required: 'Address required',
-              minLength: {
-                value: 20,
-                message: 'Address must be at least 20 characters',
-              },
-            }}
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[
-                  styles.input,
-                  isSeller && styles.inputSeller,
-                  errors.address && styles.inputError,
-                ]}
-                placeholder="Address"
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-
-          {errors.address && (
-            <Text style={styles.errorText}>
-              {errors.address.message as string}
-            </Text>
-          )}
         </View>
 
+        {errors.link && (
+          <Text style={styles.errorText}>{errors.link.message as string}</Text>
+        )}
+
+        {/* BUTTON */}
         <View style={styles.row}>
           <TouchableOpacity style={styles.back} onPress={() => router.back()}>
             <Text style={styles.buttonText}>Back</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, isSeller && styles.buttonSeller]}
+            style={styles.button}
             onPress={handleSubmit(onSubmit)}
           >
             <Text style={styles.buttonText}>Next</Text>
@@ -166,26 +180,15 @@ const styles = StyleSheet.create({
 
   card: {
     width: '80%',
-    minHeight: 530,
     backgroundColor: '#fff',
     padding: 30,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  cardSeller: {
-    borderTopWidth: 6,
-    borderTopColor: '#4CAF50',
   },
 
   title: {
     fontSize: 26,
     fontWeight: 'bold',
-  },
-
-  inputGroup: {
-    width: '100%',
+    marginBottom: 20,
   },
 
   input: {
@@ -198,9 +201,52 @@ const styles = StyleSheet.create({
     borderColor: '#f8c390',
   },
 
-  inputSeller: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#4CAF50',
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  radioGroup: {
+    flexDirection: 'row',
+    marginRight: 20,
+  },
+
+  radioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#ff7f50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+
+  radioInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff7f50',
+  },
+
+  radioText: {
+    fontSize: 14,
+  },
+
+  linkInput: {
+    flex: 1,
+    backgroundColor: '#fff7e6',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#f8c390',
   },
 
   inputError: {
@@ -215,24 +261,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    marginTop: 30,
   },
 
   button: {
     backgroundColor: '#ff7f50',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    padding: 12,
     borderRadius: 10,
-  },
-
-  buttonSeller: {
-    backgroundColor: '#4CAF50',
   },
 
   back: {
     backgroundColor: '#999',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    padding: 12,
     borderRadius: 10,
   },
 

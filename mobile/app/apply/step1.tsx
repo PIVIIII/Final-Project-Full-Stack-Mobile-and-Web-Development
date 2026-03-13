@@ -4,37 +4,116 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { useSignupStore } from '../../store/useSignupStore';
 import StepIndicator from '../../components/StepIndicator';
+import { useEffect, useState } from 'react';
 
 export default function Step1() {
   const { updateFormData, formData } = useSignupStore();
-  const isSeller = formData.role === 'seller';
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: formData,
+  });
+
+  const username = watch('username');
+
+  const [checking, setChecking] = useState(false);
+  const [usernameTaken, setUsernameTaken] = useState(false);
+
+  // debounce async validation
+  useEffect(() => {
+    if (!username) {
+      setUsernameTaken(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setChecking(true);
+
+      // simulate database check
+      setTimeout(() => {
+        if (
+          username.toLowerCase() === 'admin' ||
+          username.toLowerCase() === 'root'
+        ) {
+          setUsernameTaken(true);
+        } else {
+          setUsernameTaken(false);
+        }
+
+        setChecking(false);
+      }, 500);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username]);
 
   const onSubmit = (data: any) => {
+    if (usernameTaken || checking) return;
+
     updateFormData(data);
     router.push('/apply/step2');
   };
 
   return (
     <View style={styles.bg}>
-      <View style={[styles.card, isSeller && styles.cardSeller]}>
+      <View style={styles.card}>
         <StepIndicator step={1} />
 
-        <Text style={styles.title}>
-          {isSeller ? 'Seller Account' : 'Step 1 : Account'}
-        </Text>
+        <Text style={styles.title}>Step 1 : Account</Text>
 
         <View style={styles.inputGroup}>
+          {/* username */}
+          <Controller
+            control={control}
+            name="username"
+            rules={{
+              required: 'Username required',
+              pattern: {
+                value: /^[A-Za-z\s]+$/,
+                message: 'Only letters allowed',
+              },
+            }}
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                style={[
+                  styles.input,
+                  (errors.username || usernameTaken) && styles.inputError,
+                ]}
+                placeholder="Username"
+                value={value}
+                onChangeText={onChange}
+              />
+            )}
+          />
+
+          {checking && (
+            <View style={styles.checking}>
+              <ActivityIndicator size="small" />
+              <Text style={{ marginLeft: 6 }}>Checking username...</Text>
+            </View>
+          )}
+
+          {usernameTaken && (
+            <Text style={styles.errorText}>Username นี้มีคนใช้ไปแล้ว</Text>
+          )}
+
+          {errors.username && (
+            <Text style={styles.errorText}>
+              {errors.username.message as string}
+            </Text>
+          )}
+
+          {/* email */}
           <Controller
             control={control}
             name="email"
@@ -47,11 +126,7 @@ export default function Step1() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[
-                  styles.input,
-                  isSeller && styles.inputSeller,
-                  errors.email && styles.inputError,
-                ]}
+                style={[styles.input, errors.email && styles.inputError]}
                 placeholder="Email"
                 value={value}
                 onChangeText={onChange}
@@ -65,6 +140,7 @@ export default function Step1() {
             </Text>
           )}
 
+          {/* password */}
           <Controller
             control={control}
             name="password"
@@ -77,11 +153,7 @@ export default function Step1() {
             }}
             render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[
-                  styles.input,
-                  isSeller && styles.inputSeller,
-                  errors.password && styles.inputError,
-                ]}
+                style={[styles.input, errors.password && styles.inputError]}
                 placeholder="Password"
                 secureTextEntry
                 value={value}
@@ -98,10 +170,16 @@ export default function Step1() {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, isSeller && styles.buttonSeller]}
+          style={[
+            styles.button,
+            (checking || usernameTaken) && styles.buttonDisabled,
+          ]}
+          disabled={checking || usernameTaken}
           onPress={handleSubmit(onSubmit)}
         >
-          <Text style={styles.buttonText}>Next</Text>
+          <Text style={styles.buttonText}>
+            {checking ? 'Checking...' : 'Next'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -118,22 +196,15 @@ const styles = StyleSheet.create({
 
   card: {
     width: '80%',
-    minHeight: 530,
     backgroundColor: '#fff',
     padding: 30,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  cardSeller: {
-    borderTopWidth: 6,
-    borderTopColor: '#4CAF50',
   },
 
   title: {
     fontSize: 26,
     fontWeight: 'bold',
+    marginBottom: 20,
   },
 
   inputGroup: {
@@ -145,18 +216,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff7e6',
     borderRadius: 10,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#f8c390',
   },
 
-  inputSeller: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#4CAF50',
-  },
-
   inputError: {
     borderColor: 'red',
+  },
+
+  checking: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 
   errorText: {
@@ -166,13 +238,13 @@ const styles = StyleSheet.create({
 
   button: {
     backgroundColor: '#ff7f50',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    padding: 14,
     borderRadius: 10,
+    alignItems: 'center',
   },
 
-  buttonSeller: {
-    backgroundColor: '#4CAF50',
+  buttonDisabled: {
+    backgroundColor: '#ccc',
   },
 
   buttonText: {
