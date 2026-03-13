@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 import CurrencyCard from '../components/ui/CurrencyCard';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const categories = ['food', 'toy', 'litter', 'accessory', 'health'];
 
@@ -119,10 +120,13 @@ export default function AddProduct() {
     }
 
     try {
+      const token = await AsyncStorage.getItem('token');
+
       const res = await fetch('http://localhost:5000/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // ⭐ ส่ง token
         },
         body: JSON.stringify({
           seller_id: userId,
