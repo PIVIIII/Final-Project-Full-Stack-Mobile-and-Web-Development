@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -32,11 +33,17 @@ export default function Login() {
 
       if (!res.ok) {
         setError(data.error || 'Login failed');
-      } else {
-        login(data.user._id, data.user.email, data.user.role);
-        router.replace('/');
+        return;
       }
-    } catch {
+
+      // บันทึก token
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+      }
+
+      login(data.user._id, data.user.email, data.user.role);
+      router.replace('/');
+    } catch (err) {
       setError('Network error');
     }
 
@@ -73,6 +80,7 @@ export default function Login() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

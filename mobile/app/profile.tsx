@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Profile() {
-  const { userId, role } = useAuth();
+  const { userId } = useAuth();
   const [profile, setProfile] = useState<any>(null);
 
   const getAvatar = () => {
@@ -31,14 +32,49 @@ export default function Profile() {
 
     return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
   };
+  const [error, setError] = useState('');
+
   useEffect(() => {
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/users/${userId}`)
-      .then((res) => res.json())
-      .then((data) => setProfile(data))
-      .catch(() => console.log('error loading profile'));
+    const fetchProfile = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        setProfile(null);
+        setError('No token found');
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          setProfile(null);
+          setError('Unauthorized or user not found');
+          return;
+        }
+        const data = await res.json();
+        setProfile(data);
+        setError('');
+      } catch {
+        setProfile(null);
+        setError('Network error');
+      }
+    };
+
+    fetchProfile();
   }, [userId]);
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ color: 'red' }}>{error}</Text>
+      </View>
+    );
+  }
 
   if (!profile) {
     return (
