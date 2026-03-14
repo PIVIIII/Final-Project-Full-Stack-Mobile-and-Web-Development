@@ -18,8 +18,7 @@ import { API_URL } from '../constants/api';
 
 const screenWidth = Dimensions.get('window').width;
 const numColumns = screenWidth < 600 ? 1 : 2;
-const CARD_WIDTH = screenWidth < 600 ? '100%' : screenWidth * 0.44;
-
+const CARD_WIDTH = screenWidth < 600 ? '100%' : screenWidth / 2 - 30;
 type Product = {
   _id: string;
   name: string;
@@ -180,15 +179,33 @@ export default function ProductsScreen() {
 
   /* ---------------- LOADING ---------------- */
 
-  if (loading) {
+  const renderSkeleton = () => {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ff8c42" />
-        <Text>Loading products...</Text>
+      <View style={styles.card}>
+        <View style={styles.skeletonImage} />
+
+        <View style={styles.cardContent}>
+          <View style={styles.skeletonText} />
+          <View style={styles.skeletonTag} />
+          <View style={styles.skeletonPrice} />
+        </View>
       </View>
     );
-  }
+  };
 
+  if (loading) {
+    return (
+      <FlatList
+        data={[1, 2, 3, 4, 5, 6]}
+        keyExtractor={(item) => item.toString()}
+        renderItem={renderSkeleton}
+        numColumns={numColumns}
+        columnWrapperStyle={
+          numColumns > 1 ? { justifyContent: 'space-between' } : undefined
+        }
+      />
+    );
+  }
   /* ---------------- ERROR ---------------- */
 
   if (error) {
@@ -284,15 +301,19 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: { flex: 1, padding: 20 },
 
-  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 15 },
-
-  search: {
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 12,
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
     marginBottom: 15,
   },
-
+  search: {
+    backgroundColor: 'white',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
   tagFilter: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -319,8 +340,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 18,
     overflow: 'hidden',
-    elevation: 3,
     marginHorizontal: 6,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   noResult: {
     fontSize: 18,
@@ -329,13 +354,17 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 
-  productImage: { width: '100%', aspectRatio: 1 },
-
-  cardContent: { padding: 10 },
+  productImage: {
+    width: '100%',
+    height: 250,
+    resizeMode: 'cover',
+    backgroundColor: '#f3f3f3',
+  },
+  cardContent: { padding: 12 },
 
   cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
 
-  name: { fontSize: 14, fontWeight: 'bold', flex: 1 },
+  name: { fontSize: 15, fontWeight: 'bold', flex: 1 },
 
   fav: { fontSize: 16 },
 
@@ -362,5 +391,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 10,
+  },
+
+  skeletonImage: {
+    width: '100%',
+    height: 250,
+    backgroundColor: '#e0e0e0',
+  },
+
+  skeletonText: {
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginBottom: 10,
+  },
+
+  skeletonTag: {
+    width: 60,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    marginBottom: 10,
+  },
+
+  skeletonPrice: {
+    width: 80,
+    height: 18,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
   },
 });
