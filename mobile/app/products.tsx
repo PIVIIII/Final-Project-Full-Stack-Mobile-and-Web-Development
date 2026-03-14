@@ -10,7 +10,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +41,8 @@ export default function ProductsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const params = useLocalSearchParams();
+
   const allTags = [
     'dryfood',
     'wetfood',
@@ -54,6 +56,13 @@ export default function ProductsScreen() {
     'grooming',
   ];
 
+  useEffect(() => {
+    if (params.tags) {
+      const tagArray = (params.tags as string).split(',');
+      setSelectedTags(tagArray);
+      fetchByTags(tagArray);
+    }
+  }, []);
   /* ---------------- FETCH PRODUCTS ---------------- */
 
   const fetchProducts = useCallback(async () => {
@@ -120,6 +129,10 @@ export default function ProductsScreen() {
         : [...prev, tag];
 
       fetchByTags(newTags);
+
+      router.setParams({
+        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+      });
 
       return newTags;
     });
