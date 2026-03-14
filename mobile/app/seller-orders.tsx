@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../constants/api';
 
 type Order = {
   _id: string;
@@ -33,7 +34,7 @@ export default function SellerOrders() {
   useEffect(() => {
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/orders/seller/${userId}`)
+    fetch(`${API_URL}/api/orders/seller/${userId}`)
       .then((res) => res.json())
       .then((data) => setOrders(data))
       .finally(() => setLoading(false));

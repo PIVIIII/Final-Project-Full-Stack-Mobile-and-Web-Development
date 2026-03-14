@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { API_URL } from '../constants/api';
 
 export default function Orders() {
   const { userId } = useAuth();
@@ -19,7 +20,7 @@ export default function Orders() {
   useEffect(() => {
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/orders/user/${userId}`)
+    fetch(`${API_URL}/api/orders/user/${userId}`)
       .then((res) => res.json())
       .then((data) => setOrders(data));
   }, [userId]);

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../constants/api';
 
 type Review = {
   _id: string;
@@ -33,13 +34,13 @@ export default function SellerReviews() {
   useEffect(() => {
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/reviews/seller/${userId}`)
+    fetch(`${API_URL}/api/reviews/seller/${userId}`)
       .then((res) => res.json())
       .then(setReviews);
   }, [userId]);
 
   const submitReply = async (reviewId: string) => {
-    await fetch(`http://localhost:5000/api/reviews/reply/${reviewId}`, {
+    await fetch(`${API_URL}/api/reviews/reply/${reviewId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -14,6 +14,7 @@ import { useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { router } from 'expo-router';
+import { API_URL } from '../constants/api';
 
 /* ---------------- TYPES ---------------- */
 
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteInput, setNoteInput] = useState('');
 
-  const API = 'http://localhost:5000';
+  const API = API_URL;
 
   /* ---------------- FETCH STATS ---------------- */
 

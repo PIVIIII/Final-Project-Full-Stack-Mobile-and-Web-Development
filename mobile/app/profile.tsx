@@ -12,6 +12,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { API_URL } from '../constants/api';
+
 export default function Profile() {
   const { userId } = useAuth();
   const [profile, setProfile] = useState<any>(null);
@@ -46,7 +48,7 @@ export default function Profile() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        const res = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,

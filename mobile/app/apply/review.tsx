@@ -2,13 +2,14 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSignupStore } from '../../store/useSignupStore';
 import StepIndicator from '../../components/StepIndicator';
+import { API_URL } from '../../constants/api';
 
 export default function Review() {
   const { formData, resetForm } = useSignupStore();
   const isSeller = formData.role === 'seller';
 
   const submit = async () => {
-    await fetch('http://localhost:5000/api/auth/register', {
+    await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),

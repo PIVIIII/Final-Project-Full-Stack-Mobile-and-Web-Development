@@ -14,6 +14,7 @@ import { Stack, router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
 import { useTheme } from '../context/ThemeContext';
+import { API_URL } from '../constants/api';
 
 const screenWidth = Dimensions.get('window').width;
 const numColumns = screenWidth < 600 ? 1 : 2;
@@ -28,7 +29,7 @@ type Product = {
 };
 
 export default function ProductsScreen() {
-  const API_URL = 'http://localhost:5000/api/products';
+  const API = `${API_URL}/api/products`;
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -61,7 +62,7 @@ export default function ProductsScreen() {
       setLoading(true);
       setError(false);
 
-      let url = `${API_URL}`;
+      let url = `${API}`;
 
       if (query || tags.length > 0) {
         const params: string[] = [];
@@ -69,7 +70,7 @@ export default function ProductsScreen() {
         if (query) params.push(`q=${query}`);
         if (tags.length > 0) params.push(`tags=${tags.join(',')}`);
 
-        url = `${API_URL}/search?${params.join('&')}`;
+        url = `${API}/search?${params.join('&')}`;
       }
 
       const res = await fetch(url, { cache: 'no-store' });

@@ -11,6 +11,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import { useFavoriteStore } from '../../store/useFavoriteStore';
+import { API_URL } from '../../constants/api';
 
 type Product = {
   _id: string;
@@ -34,10 +35,10 @@ export default function ProductDetail() {
 
   const [selectedImage, setSelectedImage] = useState(0);
 
-  const API_URL = `http://localhost:5000/api/products/${id}`;
+  const API = `${API_URL}/api/products/${id}`;
 
   useEffect(() => {
-    fetch(API_URL)
+    fetch(API)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);

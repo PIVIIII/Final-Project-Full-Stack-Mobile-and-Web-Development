@@ -12,6 +12,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { API_URL } from '../constants/api';
 
 export default function CartScreen() {
   const { userId } = useAuth();
@@ -54,7 +55,7 @@ export default function CartScreen() {
 
     try {
       for (const item of cart) {
-        const res = await fetch('http://localhost:5000/api/orders', {
+        const res = await fetch(`${API_URL}/apii/orders`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

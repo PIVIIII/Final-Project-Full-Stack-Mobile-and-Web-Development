@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { API_URL } from '../constants/api';
 
 interface Product {
   _id: string;
@@ -29,7 +30,7 @@ export default function MyProducts() {
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch('http://localhost:5000/api/products/my', {
+      const res = await fetch(`${API_URL}/api/products/my`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -71,7 +72,7 @@ export default function MyProducts() {
 
     for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
       try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+        const res = await fetch(`${API_URL}/api/products/${id}`, {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,

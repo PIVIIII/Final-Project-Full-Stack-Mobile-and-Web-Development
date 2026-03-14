@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../constants/api';
 
 export default function ReviewPage() {
   const params = useLocalSearchParams();
@@ -26,9 +27,7 @@ export default function ReviewPage() {
   const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
-    fetch(
-      `http://localhost:5000/api/reviews/user/${userId}/product/${productId}`,
-    )
+    fetch(`${API_URL}/api/reviews/user/${userId}/product/${productId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data) {
@@ -40,7 +39,7 @@ export default function ReviewPage() {
   }, []);
 
   const submitReview = async () => {
-    await fetch('http://localhost:5000/api/reviews', {
+    await fetch(`${API_URL}/api/reviews`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
