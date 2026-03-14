@@ -9,6 +9,9 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json('Not authenticated');
     }
 
+    if (tokenBlacklist.includes(token)) {
+      return res.status(401).json('Token revoked');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
