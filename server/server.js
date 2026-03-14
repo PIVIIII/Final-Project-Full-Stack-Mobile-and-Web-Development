@@ -55,6 +55,19 @@ app.get('/scan', (req, res) => {
   });
 });
 
+app.get('/health', (req, res) => {
+  const uptime = process.uptime();
+
+  const memoryBytes = process.memoryUsage().rss;
+  const memoryMB = Math.round(memoryBytes / 1024 / 1024);
+
+  res.json({
+    status: 'ok',
+    uptime: uptime,
+    memory_usage_mb: memoryMB,
+    timestamp: new Date().toISOString(),
+  });
+});
 app.listen(process.env.PORT, () => {
   console.log('Identity Scanner Server is running on http://localhost:8080');
 });
