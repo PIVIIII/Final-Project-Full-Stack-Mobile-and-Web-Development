@@ -155,3 +155,43 @@ export const getProductStats = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const getMyProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        error: 'seller_id required',
+      });
+    }
+
+    const products = await Product.find({
+      seller_id: sellerId,
+    }).sort({ createdAt: -1 });
+
+    res.json(products);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// DELETE /api/products/:id
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        message: 'Product not found',
+      });
+    }
+
+    res.json({
+      message: 'Product deleted successfully',
+      id: req.params.id,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};

@@ -11,6 +11,7 @@ import { useState, useRef } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import Toast from 'react-native-toast-message';
 
 function Header() {
   const { userId, email, role, logout } = useAuth();
@@ -129,10 +130,14 @@ function Header() {
                   <Text style={styles.menuText}>ADD PRODUCT</Text>
                 </TouchableOpacity>
               </Link>
-
               <Link href="/seller-orders" asChild>
                 <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
                   <Text style={styles.menuText}>SELLER ORDERS</Text>
+                </TouchableOpacity>
+              </Link>
+              <Link href="/seller-products" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>SELLER PRODUCTS</Text>
                 </TouchableOpacity>
               </Link>
 
@@ -172,6 +177,7 @@ function Layout() {
     <>
       <Header />
       <Stack screenOptions={{ headerShown: false }} />
+      <Toast position="top" />
     </>
   );
 }
