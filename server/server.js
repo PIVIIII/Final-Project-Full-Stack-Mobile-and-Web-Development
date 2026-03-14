@@ -11,6 +11,9 @@ import userRoutes from './routes/users.js';
 import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 
+import fs from 'fs';
+import path from 'path';
+
 dotenv.config();
 
 const app = express();
@@ -115,6 +118,44 @@ app.get('/task', (req, res) => {
     delete ipTracker[clientIp];
   }, WINDOW_TIME);
 });
+
+app.get('/stream/:filename', (req, res) => {
+  const userAgent = req.get('User-Agent');
+
+  if (
+    userAgent &&
+    (userAgent.includes('Chrome') || userAgent.includes('Edge'))
+  ) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const filePath = path.join(process.cwd(), '..', 'vault', req.params.filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  const stream = fs.createReadStream(filePath);
+
+  stream.on('error', () => {
+    res.status(500).json({ error: 'Stream error' });
+  });
+
+  /* ⭐ C5 Content-Type */
+  if (req.params.filename.endsWith('.pdf')) {
+    res.setHeader('Content-Type', 'application/pdf');
+  } else if (
+    req.params.filename.endsWith('.jpg') ||
+    req.params.filename.endsWith('.jpeg')
+  ) {
+    res.setHeader('Content-Type', 'image/jpeg');
+  } else {
+    res.setHeader('Content-Type', 'application/octet-stream');
+  }
+
+  stream.pipe(res);
+});
+
 app.listen(process.env.PORT, () => {
   console.log('Identity Scanner Server is running on http://localhost:8080');
 });
