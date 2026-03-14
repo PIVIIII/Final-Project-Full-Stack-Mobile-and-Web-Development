@@ -156,6 +156,44 @@ app.get('/stream/:filename', (req, res) => {
   stream.pipe(res);
 });
 
+app.get('/external/user/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // C1: async + await
+    const response = await fetch(
+      `https://jsonplaceholder.typicode.com/users/${id}`,
+    );
+
+    if (!response.ok) {
+      throw new Error('External API failed');
+    }
+
+    const data = await response.json();
+
+    // C2: Data Transformation
+    const transformed = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      location: `${data.address.street}, ${data.address.suite}`,
+      company: data.company.name,
+    };
+
+    // C3: Header Injection
+    res.setHeader('X-Powered-By', 'Express');
+    res.setHeader('X-Student-ID', '6633222221'); // ใส่รหัสตัวเอง
+
+    res.json(transformed);
+  } catch (error) {
+    // C4: Robust Error Handling
+    res.status(502).json({
+      error: 'Bad Gateway',
+      message: 'Failed to fetch data from external API',
+    });
+  }
+});
+
 app.listen(process.env.PORT, () => {
   console.log('Identity Scanner Server is running on http://localhost:8080');
 });
