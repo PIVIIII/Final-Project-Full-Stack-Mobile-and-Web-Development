@@ -10,7 +10,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useFavoriteStore } from '../store/useFavoriteStore';
 import { useTheme } from '../context/ThemeContext';
@@ -41,8 +41,6 @@ export default function ProductsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const params = useLocalSearchParams();
-
   const allTags = [
     'dryfood',
     'wetfood',
@@ -56,26 +54,28 @@ export default function ProductsScreen() {
     'grooming',
   ];
 
-  useEffect(() => {
-    if (params.tags) {
-      const tagArray = (params.tags as string).split(',');
-      setSelectedTags(tagArray);
-      fetchByTags(tagArray);
-    }
-  }, []);
   /* ---------------- FETCH PRODUCTS ---------------- */
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (query = '', tags: string[] = []) => {
     try {
       setLoading(true);
       setError(false);
 
-      const res = await fetch(API_URL);
+      let url = `${API_URL}`;
 
-      if (!res.ok) throw new Error('fetch error');
+      if (query || tags.length > 0) {
+        const params: string[] = [];
 
+        if (query) params.push(`q=${query}`);
+        if (tags.length > 0) params.push(`tags=${tags.join(',')}`);
+
+        url = `${API_URL}/search?${params.join('&')}`;
+      }
+
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
-      setProducts(data);
+
+      setProducts(query || tags.length ? data.data : data);
     } catch (err) {
       setError(true);
     } finally {
@@ -83,44 +83,38 @@ export default function ProductsScreen() {
     }
   }, []);
 
+  /* ---------------- READ URL (DEEP LINKING) ---------------- */
+
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const query = new URLSearchParams(window.location.search);
+
+    const q = query.get('q') || '';
+    const tags = query.get('tags');
+
+    const tagArray = tags ? tags.split(',') : [];
+
+    setSearchInput(q);
+    setSelectedTags(tagArray);
+
+    fetchProducts(q, tagArray);
+  }, []);
 
   /* ---------------- SEARCH ---------------- */
 
-  const debouncedSearch = useCallback(
-    async (query: string) => {
-      if (!query) {
-        fetchProducts();
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${API_URL}/search?q=${query}`);
-        const data = await res.json();
-
-        setProducts(data.data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchProducts],
-  );
-
   useEffect(() => {
     const delay = setTimeout(() => {
-      debouncedSearch(searchInput);
-    }, 500);
+      fetchProducts(searchInput, selectedTags);
+
+      router.setParams({
+        q: searchInput || undefined,
+        tags: selectedTags.length ? selectedTags.join(',') : undefined,
+      });
+    }, 400);
 
     return () => clearTimeout(delay);
-  }, [searchInput, debouncedSearch]);
+  }, [searchInput]);
 
-  /* ---------------- TAG FILTER ---------------- */
+  /* ---------------- TAG TOGGLE ---------------- */
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => {
@@ -128,38 +122,18 @@ export default function ProductsScreen() {
         ? prev.filter((t) => t !== tag)
         : [...prev, tag];
 
-      fetchByTags(newTags);
+      fetchProducts(searchInput, newTags);
 
       router.setParams({
-        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+        q: searchInput || undefined,
+        tags: newTags.length ? newTags.join(',') : undefined,
       });
 
       return newTags;
     });
   };
-  /* ---------------- FILTER PRODUCTS ---------------- */
 
-  const fetchByTags = useCallback(async (tags: string[]) => {
-    try {
-      setLoading(true);
-
-      let url = `${API_URL}`;
-
-      if (tags.length > 0) {
-        const tagQuery = tags.join(',');
-        url = `${API_URL}/search?tags=${tagQuery}`;
-      }
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      setProducts(tags.length > 0 ? data.data : data);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []); /* ---------------- PRODUCT CARD ---------------- */
+  /* ---------------- PRODUCT CARD ---------------- */
 
   const renderItem = ({ item }: { item: Product }) => {
     const isFav = favorites.includes(item._id);
@@ -182,7 +156,8 @@ export default function ProductsScreen() {
           <View style={styles.cardTop}>
             <Text style={styles.name} numberOfLines={2}>
               {item.name}
-            </Text>{' '}
+            </Text>
+
             {isFav && <Text style={styles.fav}>❤️</Text>}
           </View>
 
@@ -220,14 +195,17 @@ export default function ProductsScreen() {
       <View style={styles.center}>
         <Text style={styles.error}>⚠️ Error loading products</Text>
 
-        <TouchableOpacity style={styles.retryBtn} onPress={fetchProducts}>
+        <TouchableOpacity
+          style={styles.retryBtn}
+          onPress={() => fetchProducts()}
+        >
           <Text style={{ color: 'white' }}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  /* ---------------- MAIN UI ---------------- */
+  /* ---------------- UI ---------------- */
 
   return (
     <SafeAreaView
@@ -244,14 +222,15 @@ export default function ProductsScreen() {
           { backgroundColor: isDark ? '#656565' : '#f6f6f6' },
         ]}
       >
-        {' '}
         <Text style={styles.title}>🐱 Cat Products</Text>
+
         <TextInput
           placeholder="Search products..."
           style={styles.search}
           value={searchInput}
           onChangeText={setSearchInput}
         />
+
         <View style={styles.tagFilter}>
           {allTags.map((tag) => (
             <TouchableOpacity
@@ -274,9 +253,16 @@ export default function ProductsScreen() {
           ))}
         </View>
         {products.length === 0 ? (
-          <Text style={styles.noResult}>
-            No products found for "{searchInput}"
-          </Text>
+          <View style={styles.center}>
+            <Text style={styles.noResult}>
+              ไม่พบสินค้าตาม
+              {searchInput ? ` ชื่อ "${searchInput}"` : ''}
+              {searchInput && selectedTags.length > 0 ? ' และ' : ''}
+              {selectedTags.length > 0
+                ? ` แท็ก "${selectedTags.join(', ')}"`
+                : ''}
+            </Text>
+          </View>
         ) : (
           <FlatList
             data={products}
@@ -293,25 +279,11 @@ export default function ProductsScreen() {
   );
 }
 
-/* ---------------- STYLES ---------------- */
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#111',
-  },
+  safeArea: { flex: 1 },
+  container: { flex: 1, padding: 20 },
 
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f6f6f6',
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
+  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 15 },
 
   search: {
     backgroundColor: 'white',
@@ -322,8 +294,9 @@ const styles = StyleSheet.create({
 
   tagFilter: {
     flexDirection: 'row',
-    marginBottom: 20,
+    flexWrap: 'wrap',
     gap: 10,
+    marginBottom: 20,
   },
 
   filterTag: {
@@ -333,61 +306,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
 
-  activeTag: {
-    backgroundColor: '#ff8c42',
-  },
+  activeTag: { backgroundColor: '#ff8c42' },
 
-  filterTagText: {
-    color: '#333',
-  },
+  filterTagText: { color: '#333' },
 
-  activeTagText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+  activeTagText: { color: 'white', fontWeight: 'bold' },
 
   card: {
     width: CARD_WIDTH as any,
-    alignSelf: 'center',
     backgroundColor: 'white',
     borderRadius: 16,
     marginBottom: 18,
     overflow: 'hidden',
     elevation: 3,
-    flexGrow: 1,
     marginHorizontal: 6,
   },
-
-  productImage: {
-    width: '100%',
-    aspectRatio: 1,
-    resizeMode: 'cover',
+  noResult: {
+    fontSize: 18,
+    color: 'gray',
+    textAlign: 'center',
+    marginTop: 40,
   },
 
-  cardContent: {
-    padding: 10,
-  },
+  productImage: { width: '100%', aspectRatio: 1 },
 
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  cardContent: { padding: 10 },
 
-  name: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    flex: 1,
-  },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
 
-  fav: {
-    fontSize: 16,
-  },
+  name: { fontSize: 14, fontWeight: 'bold', flex: 1 },
 
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 4,
-  },
+  fav: { fontSize: 16 },
+
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
 
   tag: {
     backgroundColor: '#eee',
@@ -399,36 +350,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  price: {
-    marginTop: 6,
-    fontWeight: 'bold',
-    color: '#ff8c42',
-    fontSize: 16,
-  },
+  price: { marginTop: 6, fontWeight: 'bold', color: '#ff8c42', fontSize: 16 },
 
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  error: {
-    color: 'red',
-    fontSize: 18,
-    marginBottom: 10,
-  },
+  error: { color: 'red', fontSize: 18, marginBottom: 10 },
 
   retryBtn: {
     backgroundColor: '#ff8c42',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 10,
-  },
-
-  noResult: {
-    textAlign: 'center',
-    marginTop: 40,
-    fontSize: 18,
-    color: 'gray',
   },
 });
