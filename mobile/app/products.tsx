@@ -159,7 +159,7 @@ export default function ProductsScreen() {
               {item.name}
             </Text>
 
-            {isFav && <Text style={styles.fav}>❤️</Text>}
+            {isFav && <Text style={styles.fav}>😻</Text>}
           </View>
 
           {item.tags && (

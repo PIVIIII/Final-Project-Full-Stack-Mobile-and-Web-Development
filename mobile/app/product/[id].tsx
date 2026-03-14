@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import { useFavoriteStore } from '../../store/useFavoriteStore';
 import { API_URL } from '../../constants/api';
+import { useAuth } from '../../context/AuthContext';
 
 type Product = {
   _id: string;
@@ -25,6 +26,7 @@ type Product = {
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
+  const { role } = useAuth();
 
   const addToCart = useCartStore((state) => state.addToCart);
   const { favorites, toggleFavorite } = useFavoriteStore();
@@ -51,7 +53,7 @@ export default function ProductDetail() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/reviews/product/${id}?page=${page}`)
+    fetch(`${API_URL}/api/reviews/product/${id}?page=${page}`)
       .then((res) => res.json())
       .then((data) => setReviews(data.data));
   }, [id, page]);
@@ -93,9 +95,11 @@ export default function ProductDetail() {
         <View style={styles.header}>
           <Text style={styles.name}>{product.name}</Text>
 
-          <TouchableOpacity onPress={() => toggleFavorite(product._id)}>
-            <Text style={styles.fav}>{isFav ? '❤️' : '🤍'}</Text>
-          </TouchableOpacity>
+          {role === 'admin' && (
+            <TouchableOpacity onPress={() => toggleFavorite(product._id)}>
+              <Text style={styles.fav}>{isFav ? '😻' : '😺'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.desc}>{product.description}</Text>
