@@ -78,9 +78,10 @@ export default function AddProduct() {
   const validate = () => {
     let newErrors: any = {};
 
-    if (!name) newErrors.name = 'Product name required';
-    if (!price) newErrors.price = 'Price required';
+    if (!name.trim()) newErrors.name = 'Product name required';
+    if (!price.trim()) newErrors.price = 'Price required';
     if (!category) newErrors.category = 'Category required';
+    if (images.length === 0) newErrors.images = 'At least 1 image required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -159,9 +160,7 @@ export default function AddProduct() {
 
       const nextIndex = prev.findIndex((i) => i.status === 'pending');
 
-      if (nextIndex === -1) {
-        return prev;
-      }
+      if (nextIndex === -1) return prev;
 
       const updated = [...prev];
 
@@ -188,11 +187,6 @@ export default function AddProduct() {
     const completedImages = images
       .filter((i) => i.status === 'completed')
       .map((i) => i.base64);
-
-    if (completedImages.length < 1) {
-      Alert.alert('Please upload at least 1 image');
-      return;
-    }
 
     try {
       const token = await AsyncStorage.getItem('token');
@@ -245,10 +239,14 @@ export default function AddProduct() {
 
         <TextInput
           placeholder="Product name"
-          style={styles.input}
+          style={[styles.input, errors.name && styles.inputError]}
           value={name}
-          onChangeText={setName}
+          onChangeText={(v) => {
+            setName(v);
+            setErrors((p: any) => ({ ...p, name: null }));
+          }}
         />
+        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
         <TextInput
           placeholder="Description"
@@ -259,10 +257,22 @@ export default function AddProduct() {
 
         <TextInput
           placeholder="Price"
-          style={styles.input}
+          style={[styles.input, errors.price && styles.inputError]}
           keyboardType="numeric"
           value={price}
-          onChangeText={(v) => numberOnly(v, setPrice)}
+          onChangeText={(v) => {
+            numberOnly(v, setPrice);
+            setErrors((p: any) => ({ ...p, price: null }));
+          }}
+        />
+        {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+
+        <TextInput
+          placeholder="Discount percent"
+          style={styles.input}
+          keyboardType="numeric"
+          value={discount}
+          onChangeText={(v) => numberOnly(v, setDiscount)}
         />
 
         <TextInput
@@ -273,7 +283,54 @@ export default function AddProduct() {
           onChangeText={(v) => numberOnly(v, setStock)}
         />
 
+        <Text style={styles.section}>Category</Text>
+
+        <View style={styles.tagContainer}>
+          {categories.map((c) => (
+            <TouchableOpacity
+              key={c}
+              style={[styles.tag, category === c && styles.tagActive]}
+              onPress={() => {
+                setCategory(c);
+                setErrors((p: any) => ({ ...p, category: null }));
+              }}
+            >
+              <Text
+                style={[styles.tagText, category === c && styles.tagTextActive]}
+              >
+                {c}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.category && (
+          <Text style={styles.errorText}>{errors.category}</Text>
+        )}
+
+        <Text style={styles.section}>Tags</Text>
+
+        <View style={styles.tagContainer}>
+          {tagOptions.map((tag) => (
+            <TouchableOpacity
+              key={tag}
+              style={[styles.tag, tags.includes(tag) && styles.tagActive]}
+              onPress={() => toggleTag(tag)}
+            >
+              <Text
+                style={[
+                  styles.tagText,
+                  tags.includes(tag) && styles.tagTextActive,
+                ]}
+              >
+                {tag}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={styles.section}>Images (max 5)</Text>
+
+        {errors.images && <Text style={styles.errorText}>{errors.images}</Text>}
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {images.map((img) => (
@@ -285,11 +342,7 @@ export default function AddProduct() {
                 />
               </TouchableOpacity>
 
-              <Text>
-                {img.status === 'pending' && 'waiting'}
-                {img.status === 'running' && 'uploading'}
-                {img.status === 'completed' && 'done'}
-              </Text>
+              <Text>{img.status}</Text>
 
               {img.status === 'running' && (
                 <View style={styles.progressBar}>
@@ -324,9 +377,9 @@ export default function AddProduct() {
           onChangeText={(v) => numberOnly(v, setThb)}
         />
 
-        <CurrencyCard label="ลด 5%" value={`${discount1}`} />
-        <CurrencyCard label="ลด 10%" value={`${discount2}`} />
-        <CurrencyCard label="ลด 20%" value={`${discount3}`} />
+        <CurrencyCard label="ลด 5%" value={discount1} />
+        <CurrencyCard label="ลด 10%" value={discount2} />
+        <CurrencyCard label="ลด 20%" value={discount3} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -334,6 +387,7 @@ export default function AddProduct() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 30, backgroundColor: '#f4f6f9' },
+
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
 
   input: {
@@ -343,10 +397,47 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
+  inputError: {
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+
+  errorText: {
+    color: 'red',
+    marginBottom: 8,
+  },
+
   section: {
     fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 8,
+  },
+
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 10,
+  },
+
+  tag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#ddd',
+    borderRadius: 20,
+  },
+
+  tagActive: {
+    backgroundColor: '#ff8c42',
+  },
+
+  tagText: {
+    color: '#333',
+  },
+
+  tagTextActive: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 
   progressBar: {
