@@ -1,19 +1,22 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const [power, setPower] = useState(0);
 
+  const [catImage, setCatImage] = useState<string | null>(null);
+  const [catFact, setCatFact] = useState<string | null>(null);
+
+  const [imageError, setImageError] = useState(false);
+  const [factError, setFactError] = useState(false);
+  const [offline, setOffline] = useState(false);
+
   const handlePress = () => {
     const randomPower = Math.floor(Math.random() * 10) + 5;
     setPower((prev) => prev + randomPower);
-  };
-
-  const getRank = () => {
-    if (power >= 100) return 'Gold';
-    if (power >= 50) return 'Silver';
-    return 'Bronze';
   };
 
   const getColor = () => {
@@ -28,9 +31,56 @@ export default function HomeScreen() {
     return 36;
   };
 
+  const fetchData = async () => {
+    try {
+      const results = await Promise.allSettled([
+        axios.get('https://api.thecatapi.com/v1/images/search'),
+        axios.get('https://catfact.ninja/fact'),
+      ]);
+
+      // ---------- CAT IMAGE ----------
+      if (results[0].status === 'fulfilled') {
+        const img = results[0].value.data[0].url;
+
+        setCatImage(img);
+        setImageError(false);
+
+        await AsyncStorage.setItem('catImage', img);
+      } else {
+        setImageError(true);
+      }
+
+      // ---------- CAT FACT ----------
+      if (results[1].status === 'fulfilled') {
+        const fact = results[1].value.data.fact;
+
+        setCatFact(fact);
+        setFactError(false);
+
+        await AsyncStorage.setItem('catFact', fact);
+      } else {
+        setFactError(true);
+      }
+
+      setOffline(false);
+    } catch (error) {
+      // ---------- OFFLINE MODE ----------
+      const savedImage = await AsyncStorage.getItem('catImage');
+      const savedFact = await AsyncStorage.getItem('catFact');
+
+      if (savedImage) setCatImage(savedImage);
+      if (savedFact) setCatFact(savedFact);
+
+      setOffline(true);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <View style={styles.container}>
-      {/* center content */}
       <View style={styles.centerBox}>
         <TouchableOpacity onPress={handlePress}>
           <Text
@@ -42,7 +92,22 @@ export default function HomeScreen() {
 
         <Text style={styles.subtitle}>ตลาดของเล่นสำหรับเจ้าเหมียว 🐱</Text>
 
-        {/* explore button */}
+        {offline && <Text style={styles.offline}>offline data</Text>}
+
+        {/* CAT IMAGE */}
+        {imageError ? (
+          <Text style={styles.error}>Image API Error</Text>
+        ) : catImage ? (
+          <Image source={{ uri: catImage }} style={styles.image} />
+        ) : null}
+
+        {/* CAT FACT */}
+        {factError ? (
+          <Text style={styles.error}>Fact API Error</Text>
+        ) : (
+          <Text style={styles.fact}>{catFact}</Text>
+        )}
+
         <Link href="/products" asChild>
           <TouchableOpacity style={styles.button}>
             <Text style={styles.buttonText}>สำรวจสินค้า</Text>
@@ -82,6 +147,30 @@ const styles = StyleSheet.create({
     color: '#555',
   },
 
+  image: {
+    width: 200,
+    height: 200,
+    marginTop: 15,
+    borderRadius: 10,
+  },
+
+  fact: {
+    marginTop: 10,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+
+  error: {
+    color: 'red',
+    marginTop: 10,
+  },
+
+  offline: {
+    marginTop: 10,
+    color: 'orange',
+    fontWeight: 'bold',
+  },
+
   button: {
     marginTop: 25,
     backgroundColor: '#ff8c42',
@@ -94,19 +183,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-
-  auth: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    flexDirection: 'row',
-    gap: 15,
-  },
-
-  authText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
   },
 });

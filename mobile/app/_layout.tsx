@@ -68,7 +68,7 @@ function Header() {
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>
-            MeowMarket {role === 'seller' ? '(seller)' : ''}
+            MeowMarket {role === 'Admin' ? '(Admin)' : ''}
           </Text>
         </View>
 
@@ -117,6 +117,12 @@ function Header() {
             },
           ]}
         >
+          <Link href="/" asChild>
+            <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+              <Text style={styles.menuText}>HOME</Text>
+            </TouchableOpacity>
+          </Link>
+
           <Link href="/profile" asChild>
             <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
               <Text style={styles.menuText}>PROFILE</Text>
