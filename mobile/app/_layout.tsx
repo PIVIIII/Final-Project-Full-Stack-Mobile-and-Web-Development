@@ -21,6 +21,7 @@ function Header() {
 
   const [open, setOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  console.log('ROLE:', role);
 
   const toggleMenu = () => {
     if (open) {
@@ -68,7 +69,7 @@ function Header() {
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>
-            MeowMarket {role === 'Admin' ? '(Admin)' : ''}
+            MeowMarket {role === 'admin' ? '(Admin)' : ''}
           </Text>
         </View>
 
@@ -128,6 +129,16 @@ function Header() {
               <Text style={styles.menuText}>PROFILE</Text>
             </TouchableOpacity>
           </Link>
+
+          {role === 'admin' && (
+            <>
+              <Link href="/admin-dashboard" asChild>
+                <TouchableOpacity style={styles.menuItem} onPress={closeMenu}>
+                  <Text style={styles.menuText}>ADMIN PAGE</Text>
+                </TouchableOpacity>
+              </Link>
+            </>
+          )}
 
           {role === 'seller' && (
             <>
