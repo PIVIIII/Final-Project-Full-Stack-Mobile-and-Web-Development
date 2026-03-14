@@ -7,16 +7,17 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+
 import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+  const { login } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const { login } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -33,15 +34,16 @@ export default function Login() {
 
       if (!res.ok) {
         setError(data.error || 'Login failed');
+        setLoading(false);
         return;
       }
 
-      // บันทึก token
       if (data.token) {
         await AsyncStorage.setItem('token', data.token);
       }
 
-      login(data.user._id, data.user.email, data.user.role);
+      await login(data.user._id, data.user.email, data.user.role);
+
       router.replace('/');
     } catch (err) {
       setError('Network error');
@@ -86,7 +88,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#87CEFA',
   },
 
   title: {

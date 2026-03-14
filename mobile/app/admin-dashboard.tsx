@@ -13,6 +13,7 @@ import {
 import { useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import { router } from 'expo-router';
 
 /* ---------------- TYPES ---------------- */
 
@@ -43,6 +44,18 @@ export default function AdminDashboard() {
   const API = 'http://localhost:5000';
 
   /* ---------------- FETCH STATS ---------------- */
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const role = await AsyncStorage.getItem('role');
+
+      if (role !== 'admin') {
+        router.replace('/'); // redirect ออก
+      }
+    };
+
+    checkRole();
+  }, []);
 
   const fetchStats = async () => {
     const token = await AsyncStorage.getItem('token');

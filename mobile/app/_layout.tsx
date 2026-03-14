@@ -14,7 +14,7 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import Toast from 'react-native-toast-message';
 
 function Header() {
-  const { userId, email, role, logout } = useAuth();
+  const { userId, email, role, logout, loading } = useAuth();
   const { theme, toggleTheme } = useTheme(); // ⭐ ต้องมี
 
   const isDark = theme === 'dark';
@@ -53,6 +53,8 @@ function Header() {
     outputRange: [-20, 0],
   });
 
+  if (loading) return null;
+
   return (
     <View
       style={[
@@ -79,7 +81,7 @@ function Header() {
         </TouchableOpacity>
 
         <View style={styles.rightSection}>
-          {userId ? (
+          {userId && email ? (
             <>
               <Text style={styles.headerAuth}>{email}</Text>
 
