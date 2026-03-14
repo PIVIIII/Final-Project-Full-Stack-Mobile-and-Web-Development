@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import Toast from 'react-native-toast-message';
 export default function HomeScreen() {
   const [power, setPower] = useState(0);
+  const [bgColor, setBgColor] = useState('#f7be75');
 
   const [catImage, setCatImage] = useState<string | null>(null);
   const [catFact, setCatFact] = useState<string | null>(null);
@@ -19,6 +20,25 @@ export default function HomeScreen() {
     setPower((prev) => prev + randomPower);
   };
 
+  const handleFeed = (item: string) => {
+    const colors = ['#f7be75', '#bde0fe', '#caffbf', '#ffc6ff', '#ffd6a5'];
+
+    const newColor = colors[Math.floor(Math.random() * colors.length)];
+    setBgColor(newColor);
+
+    Toast.hide(); // ปิดตัวเก่า
+
+    setTimeout(() => {
+      Toast.show({
+        type: 'success',
+        text1: 'แมวได้รับแล้ว 🐱',
+        text2: `แมวได้รับ ${item}`,
+        visibilityTime: 2000,
+        position: 'top',
+        topOffset: 60,
+      });
+    }, 120);
+  };
   const getColor = () => {
     if (power >= 100) return '#FFD700';
     if (power >= 50) return '#C0C0C0';
@@ -80,7 +100,8 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+      {' '}
       <View style={styles.centerBox}>
         <TouchableOpacity onPress={handlePress}>
           <Text
@@ -108,6 +129,29 @@ export default function HomeScreen() {
           <Text style={styles.fact}>{catFact}</Text>
         )}
 
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleFeed('อาหาร')}
+          >
+            <Text style={styles.actionText}>🍗 อาหาร</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleFeed('น้ำ')}
+          >
+            <Text style={styles.actionText}>💧 น้ำ</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleFeed('ของเล่น')}
+          >
+            <Text style={styles.actionText}>🧶 ของเล่น</Text>
+          </TouchableOpacity>
+        </View>
+
         <Link href="/products" asChild>
           <TouchableOpacity style={styles.button}>
             <Text style={styles.buttonText}>สำรวจสินค้า</Text>
@@ -121,7 +165,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7be75',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -151,7 +194,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     marginTop: 15,
-    borderRadius: 10,
+    borderRadius: 100,
   },
 
   fact: {
@@ -182,6 +225,23 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: 15,
+    gap: 10,
+  },
+
+  actionBtn: {
+    backgroundColor: '#eee',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+
+  actionText: {
     fontWeight: 'bold',
   },
 });
